@@ -13,4 +13,7 @@ Here are some ideas to get you started:
    
 Following is my github stats
   
+<!--START_SECTION:waka-->
+<!--END_SECTION:waka-->
+  
 [![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=liuyunfz)](https://github.com/anuraghazra/github-readme-stats)
