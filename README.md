@@ -10,24 +10,13 @@ Here are some ideas to get you started:
 - 💪 I’m currently learning Python.
 - 🕗 I'm from China （UTC+8）
 - 📫 Reach me by email: [ly@6yfz.cn](mailto:ly@6yfz.cn)
-   
-Following is my github stats
+  
+---
+### Following is my stats
+  
+[![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=liuyunfz)](https://github.com/anuraghazra/github-readme-stats)
   
 <!--START_SECTION:waka-->
-![Profile Views](http://img.shields.io/badge/Profile%20Views-0-blue)
-
-**🐱 My GitHub Data** 
-
-> 🏆 89 Contributions in the Year 2021
- > 
-> 📦 95.7 kB Used in GitHub's Storage 
- > 
-> 🚫 Not Opted to Hire
- > 
-> 📜 12 Public Repositories 
- > 
-> 🔑 3 Private Repositories  
- > 
 **I'm a Night 🦉** 
 
 ```text
@@ -62,12 +51,6 @@ No Activity Tracked This Week
 🔥 Editors: 
 No Activity Tracked This Week
 
-🐱‍💻 Projects: 
-No Activity Tracked This Week
-
-💻 Operating System: 
-No Activity Tracked This Week
-
 ```
 
 **I Mostly Code in Python** 
@@ -77,14 +60,4 @@ Python                   8 repos             ███████████�
 HTML                     1 repo              ██░░░░░░░░░░░░░░░░░░░░░░░   11.11%
 
 ```
-
-
-**Timeline**
-
-![Chart not found](https://raw.githubusercontent.com/liuyunfz/liuyunfz/master/charts/bar_graph.png) 
-
-
- Last Updated on 26/11/2021
 <!--END_SECTION:waka-->
-  
-[![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=liuyunfz)](https://github.com/anuraghazra/github-readme-stats)
