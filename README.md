@@ -48,10 +48,10 @@ Sunday       28 commits     ███░░░░░░░░░░░░░░�
 ⌚︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Python                   6 mins              █████████████████████████   100.0%
+No Activity Tracked This Week
 
 🔥 Editors: 
-PyCharm                  6 mins              █████████████████████████   100.0%
+No Activity Tracked This Week
 
 ```
 
