@@ -17,7 +17,7 @@ Here are some ideas to get you started:
 [![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=liuyunfz)](https://github.com/anuraghazra/github-readme-stats)
   
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-231%20hrs%2021%20mins-blue)
+![Code Time](http://img.shields.io/badge/Code%20Time-232%20hrs%2036%20mins-blue)
 
 **I'm a Night 🦉** 
 
@@ -48,12 +48,12 @@ Sunday       31 commits     ███░░░░░░░░░░░░░░�
 ⌚︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Vue.js                   19 mins             ██████████████████████░░░   90.61% 
-JSON                     2 mins              ██░░░░░░░░░░░░░░░░░░░░░░░   9.39% 
+Vue.js                   1 hr 34 mins        ████████████████████████░   97.93% 
+JSON                     2 mins              ░░░░░░░░░░░░░░░░░░░░░░░░░   2.07% 
 Markdown                 0 secs              ░░░░░░░░░░░░░░░░░░░░░░░░░   0.0%
 
 🔥 Editors: 
-HbuilderX                21 mins             █████████████████████████   100.0%
+HbuilderX                1 hr 36 mins        █████████████████████████   100.0%
 
 ```
 
