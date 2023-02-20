@@ -17,7 +17,7 @@ Here are some ideas to get you started:
 [![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=liuyunfz)](https://github.com/anuraghazra/github-readme-stats)
   
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-288%20hrs%2036%20mins-blue)
+![Code Time](http://img.shields.io/badge/Code%20Time-290%20hrs%2037%20mins-blue)
 
 **I'm a Night 🦉** 
 
@@ -48,10 +48,10 @@ Sunday          29 commits       ███░░░░░░░░░░░░�
 ⌚︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Python                   6 hrs 41 mins       █████████████████████████   100.00 % 
+Python                   3 hrs 57 mins       █████████████████████████   100.00 % 
 
 🔥 Editors: 
-PyCharm                  6 hrs 41 mins       █████████████████████████   100.00 % 
+PyCharm                  3 hrs 57 mins       █████████████████████████   100.00 % 
 
 ```
 
