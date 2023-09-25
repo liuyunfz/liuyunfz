@@ -46,11 +46,10 @@ Sunday                   78 commits          ████░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Python                   19 mins             █████████████████░░░░░░░░   69.91 % 
-YAML                     8 mins              ████████░░░░░░░░░░░░░░░░░   30.09 % 
+No Activity Tracked This Week
 
 🔥 Editors: 
-PyCharm                  28 mins             █████████████████████████   100.00 % 
+No Activity Tracked This Week
 ```
 
 **I Mostly Code in Python** 
