@@ -17,7 +17,7 @@ Here are some ideas to get you started:
 [![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=liuyunfz)](https://github.com/anuraghazra/github-readme-stats)
   
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-374%20hrs%2030%20mins-blue)
+![Code Time](http://img.shields.io/badge/Code%20Time-375%20hrs%2024%20mins-blue)
 
 **I'm an Early 🐤** 
 
@@ -46,11 +46,14 @@ Sunday                   76 commits          ████░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Python                   20 mins             █████████████████████████   99.48 % 
-CSV/TSV                  0 secs              ░░░░░░░░░░░░░░░░░░░░░░░░░   00.52 % 
+Python                   1 hr                ████████████████████░░░░░   81.67 % 
+YAML                     12 mins             ████░░░░░░░░░░░░░░░░░░░░░   17.01 % 
+Text                     0 secs              ░░░░░░░░░░░░░░░░░░░░░░░░░   01.18 % 
+CSV/TSV                  0 secs              ░░░░░░░░░░░░░░░░░░░░░░░░░   00.14 % 
 
 🔥 Editors: 
-PyCharm                  20 mins             █████████████████████████   100.00 % 
+PyCharm                  57 mins             ████████████████████░░░░░   78.65 % 
+VS Code                  15 mins             █████░░░░░░░░░░░░░░░░░░░░   21.35 % 
 ```
 
 **I Mostly Code in Python** 
