@@ -55,9 +55,9 @@ No Activity Tracked This Week
 **I Mostly Code in Python** 
 
 ```text
-Python                   9 repos             ██████████████░░░░░░░░░░░   56.25 % 
-Vue                      6 repos             █████████░░░░░░░░░░░░░░░░   37.50 % 
-HTML                     1 repo              ██░░░░░░░░░░░░░░░░░░░░░░░   06.25 % 
+Python                   9 repos             █████████████░░░░░░░░░░░░   52.94 % 
+Vue                      7 repos             ██████████░░░░░░░░░░░░░░░   41.18 % 
+HTML                     1 repo              █░░░░░░░░░░░░░░░░░░░░░░░░   05.88 % 
 ```
 
 
