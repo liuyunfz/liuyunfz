@@ -46,11 +46,10 @@ Sunday                   83 commits          ████░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Java                     54 mins             ████████████████████████░   96.32 % 
-XML                      2 mins              █░░░░░░░░░░░░░░░░░░░░░░░░   03.68 % 
+No Activity Tracked This Week
 
 🔥 Editors: 
-IntelliJ IDEA            56 mins             █████████████████████████   100.00 % 
+No Activity Tracked This Week
 ```
 
 **I Mostly Code in Python** 
