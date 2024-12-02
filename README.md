@@ -17,6 +17,41 @@ Here are some ideas to get you started:
 [![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=liuyunfz)](https://github.com/anuraghazra/github-readme-stats)
   
 <!--START_SECTION:waka-->
+![Code Time](http://img.shields.io/badge/Code%20Time-431%20hrs%2044%20mins-blue)
+
+**I'm an Early 🐤** 
+
+```text
+🌞 Morning                46 commits          ██░░░░░░░░░░░░░░░░░░░░░░░   08.90 % 
+🌆 Daytime                219 commits         ███████████░░░░░░░░░░░░░░   42.36 % 
+🌃 Evening                241 commits         ████████████░░░░░░░░░░░░░   46.62 % 
+🌙 Night                  11 commits          █░░░░░░░░░░░░░░░░░░░░░░░░   02.13 % 
+```
+📅 **I'm Most Productive on Wednesday** 
+
+```text
+Monday                   62 commits          ███░░░░░░░░░░░░░░░░░░░░░░   11.99 % 
+Tuesday                  57 commits          ███░░░░░░░░░░░░░░░░░░░░░░   11.03 % 
+Wednesday                91 commits          ████░░░░░░░░░░░░░░░░░░░░░   17.60 % 
+Thursday                 71 commits          ███░░░░░░░░░░░░░░░░░░░░░░   13.73 % 
+Friday                   68 commits          ███░░░░░░░░░░░░░░░░░░░░░░   13.15 % 
+Saturday                 85 commits          ████░░░░░░░░░░░░░░░░░░░░░   16.44 % 
+Sunday                   83 commits          ████░░░░░░░░░░░░░░░░░░░░░   16.05 % 
+```
+
+
+📊 **This Week I Spent My Time On** 
+
+```text
+🕑︎ Time Zone: Asia/Shanghai
+
+💬 Programming Languages: 
+No Activity Tracked This Week
+
+🔥 Editors: 
+No Activity Tracked This Week
+```
+
 **I Mostly Code in Python** 
 
 ```text
