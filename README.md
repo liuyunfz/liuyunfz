@@ -17,7 +17,7 @@ Here are some ideas to get you started:
 [![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=liuyunfz)](https://github.com/anuraghazra/github-readme-stats)
   
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-465%20hrs-blue)
+![Code Time](http://img.shields.io/badge/Code%20Time-468%20hrs%2021%20mins-blue)
 
 **I'm an Early 🐤** 
 
@@ -46,10 +46,10 @@ Sunday                   83 commits          ████░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Java                     7 hrs 23 mins       █████████████████████████   100.00 % 
+Java                     9 hrs 8 mins        █████████████████████████   100.00 % 
 
 🔥 Editors: 
-IntelliJ IDEA            7 hrs 23 mins       █████████████████████████   100.00 % 
+IntelliJ IDEA            9 hrs 8 mins        █████████████████████████   100.00 % 
 ```
 
 **I Mostly Code in Python** 
