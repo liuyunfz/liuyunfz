@@ -55,11 +55,11 @@ No Activity Tracked This Week
 **I Mostly Code in Python** 
 
 ```text
-Python                   11 repos            ███████████░░░░░░░░░░░░░░   42.31 % 
-JavaScript               2 repos             ██░░░░░░░░░░░░░░░░░░░░░░░   07.69 % 
-GAP                      1 repo              █░░░░░░░░░░░░░░░░░░░░░░░░   03.85 % 
-TypeScript               1 repo              █░░░░░░░░░░░░░░░░░░░░░░░░   03.85 % 
-PHP                      1 repo              █░░░░░░░░░░░░░░░░░░░░░░░░   03.85 % 
+Python                   11 repos            ██████████░░░░░░░░░░░░░░░   40.74 % 
+TypeScript               2 repos             ██░░░░░░░░░░░░░░░░░░░░░░░   07.41 % 
+JavaScript               2 repos             ██░░░░░░░░░░░░░░░░░░░░░░░   07.41 % 
+GAP                      1 repo              █░░░░░░░░░░░░░░░░░░░░░░░░   03.70 % 
+PHP                      1 repo              █░░░░░░░░░░░░░░░░░░░░░░░░   03.70 % 
 ```
 
 
