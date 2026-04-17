@@ -19,43 +19,6 @@ Here are some ideas to get you started:
 <!--START_SECTION:waka-->
 ![Code Time](http://img.shields.io/badge/Code%20Time-522%20hrs%204%20mins-blue?style=flat)
 
-**I'm an Early 🐤** 
-
-```text
-🌞 Morning                59 commits          ██░░░░░░░░░░░░░░░░░░░░░░░   08.43 % 
-🌆 Daytime                301 commits         ███████████░░░░░░░░░░░░░░   43.00 % 
-🌃 Evening                322 commits         ████████████░░░░░░░░░░░░░   46.00 % 
-🌙 Night                  18 commits          █░░░░░░░░░░░░░░░░░░░░░░░░   02.57 % 
-```
-📅 **I'm Most Productive on Wednesday** 
-
-```text
-Monday                   103 commits         ████░░░░░░░░░░░░░░░░░░░░░   14.71 % 
-Tuesday                  79 commits          ███░░░░░░░░░░░░░░░░░░░░░░   11.29 % 
-Wednesday                144 commits         █████░░░░░░░░░░░░░░░░░░░░   20.57 % 
-Thursday                 92 commits          ███░░░░░░░░░░░░░░░░░░░░░░   13.14 % 
-Friday                   76 commits          ███░░░░░░░░░░░░░░░░░░░░░░   10.86 % 
-Saturday                 113 commits         ████░░░░░░░░░░░░░░░░░░░░░   16.14 % 
-Sunday                   93 commits          ███░░░░░░░░░░░░░░░░░░░░░░   13.29 % 
-```
-
-
-📊 **This Week I Spent My Time On** 
-
-```text
-🕑︎ Time Zone: Asia/Shanghai
-
-💬 Programming Languages: 
-Other                    2 hrs 22 mins       ███████████████████░░░░░░   77.66 % 
-Java                     34 mins             █████░░░░░░░░░░░░░░░░░░░░   18.69 % 
-YAML                     3 mins              █░░░░░░░░░░░░░░░░░░░░░░░░   02.16 % 
-Lua                      1 min               ░░░░░░░░░░░░░░░░░░░░░░░░░   00.55 % 
-SQL                      0 secs              ░░░░░░░░░░░░░░░░░░░░░░░░░   00.35 % 
-
-🔥 Editors: 
-IntelliJ IDEA            3 hrs 2 mins        █████████████████████████   100.00 % 
-```
-
 **I Mostly Code in Python** 
 
 ```text
