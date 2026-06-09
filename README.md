@@ -17,7 +17,7 @@ Here are some ideas to get you started:
 [![Anurag's github stats](https://github-readme-stats.vercel.app/api?username=liuyunfz)](https://github.com/anuraghazra/github-readme-stats)
   
 <!--START_SECTION:waka-->
-![Code Time](http://img.shields.io/badge/Code%20Time-558%20hrs%2038%20mins-blue?style=flat)
+![Code Time](http://img.shields.io/badge/Code%20Time-558%20hrs%2042%20mins-blue?style=flat)
 
 **I'm an Early 🐤** 
 
@@ -46,13 +46,13 @@ Sunday                   93 commits          ███░░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Java                     44 mins             █████████████████░░░░░░░░   67.76 % 
-Other                    12 mins             █████░░░░░░░░░░░░░░░░░░░░   19.51 % 
-Python                   5 mins              ██░░░░░░░░░░░░░░░░░░░░░░░   09.04 % 
-JSON                     2 mins              █░░░░░░░░░░░░░░░░░░░░░░░░   03.68 % 
+Java                     1 hr 24 mins        ██████████████████░░░░░░░   72.73 % 
+Other                    23 mins             █████░░░░░░░░░░░░░░░░░░░░   20.04 % 
+Python                   5 mins              █░░░░░░░░░░░░░░░░░░░░░░░░   05.14 % 
+JSON                     2 mins              █░░░░░░░░░░░░░░░░░░░░░░░░   02.09 % 
 
 🔥 Editors: 
-IntelliJ IDEA            1 hr 6 mins         █████████████████████████   100.00 % 
+IntelliJ IDEA            1 hr 56 mins        █████████████████████████   100.00 % 
 ```
 
 **I Mostly Code in Python** 
