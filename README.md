@@ -46,12 +46,10 @@ Sunday                   93 commits          ███░░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Markdown                 59 mins             █████████████████████████   99.62 % 
-textmate                 0 secs              ░░░░░░░░░░░░░░░░░░░░░░░░░   00.38 % 
+No Activity Tracked This Week
 
 🔥 Editors: 
-VS Code                  40 mins             █████████████████░░░░░░░░   68.16 % 
-IntelliJ IDEA            18 mins             ████████░░░░░░░░░░░░░░░░░   31.84 % 
+No Activity Tracked This Week
 ```
 
 **I Mostly Code in Python** 
