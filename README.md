@@ -48,16 +48,38 @@ Sunday                   93 commits          ███░░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-No Activity Tracked This Week
+Java                     5 hrs 16 mins       ████████░░░░░░░░░░░░░░░░░   33.76 % 
+JSON                     3 hrs 43 mins       ██████░░░░░░░░░░░░░░░░░░░   23.90 % 
+Markdown                 2 hrs 6 mins        ███░░░░░░░░░░░░░░░░░░░░░░   13.51 % 
+YAML                     1 hr 57 mins        ███░░░░░░░░░░░░░░░░░░░░░░   12.59 % 
+HTML                     1 hr 26 mins        ██░░░░░░░░░░░░░░░░░░░░░░░   09.21 % 
 
 🔥 Editors: 
-No Activity Tracked This Week
+VS Code                  8 hrs 44 mins       ██████████████░░░░░░░░░░░   56.00 % 
+IntelliJ IDEA            6 hrs 52 mins       ███████████░░░░░░░░░░░░░░   44.00 % 
 ```
 
 🤖 **AI Coding This Week** 
 
 ```text
-No AI Coding Activity Tracked This Week
+⏱ AI Coding Time: 15 hrs 36 mins (100.0%)
+
+✍️ 21,576 lines written by AI, 0 lines written by hand (100.0% AI-written)
+
+🔤 52,524,900 Input Tokens, 4,830,047 Output Tokens
+
+💵 $858.26 Estimated AI Cost This Week
+
+🧠 91 AI Sessions, 292 AI Prompts
+
+GPT                      21,762 lines        █████████████████████████   100.00 % 
+Deepseek                 0 lines             ░░░░░░░░░░░░░░░░░░░░░░░░░   00.00 % 
+
+🔎 AI Coding Insights:
+🤖 AI-Driven — 100.0% of written lines came from AI
+📚 Verbose Prompter — average 10,401 characters per prompt
+🔁 Iterative Prompter — average 3 prompts per session
+🚀 High AI Trust — 0.0% of changed lines were hand-edited
 ```
 
 **I Mostly Code in Python** 
