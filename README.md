@@ -48,37 +48,16 @@ Sunday                   93 commits          ███░░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Java                     2 hrs 28 mins       ██████████░░░░░░░░░░░░░░░   38.16 % 
-Markdown                 1 hr 28 mins        ██████░░░░░░░░░░░░░░░░░░░   22.78 % 
-HTML                     1 hr 26 mins        ██████░░░░░░░░░░░░░░░░░░░   22.20 % 
-JSON                     43 mins             ███░░░░░░░░░░░░░░░░░░░░░░   11.30 % 
-Git Config               13 mins             █░░░░░░░░░░░░░░░░░░░░░░░░   03.46 % 
+No Activity Tracked This Week
 
 🔥 Editors: 
-VS Code                  3 hrs 21 mins       █████████████░░░░░░░░░░░░   51.81 % 
-IntelliJ IDEA            3 hrs 7 mins        ████████████░░░░░░░░░░░░░   48.19 % 
+No Activity Tracked This Week
 ```
 
 🤖 **AI Coding This Week** 
 
 ```text
-⏱ AI Coding Time: 6 hrs 28 mins (100.0%)
-
-✍️ 12,466 lines written by AI, 0 lines written by hand (100.0% AI-written)
-
-🔤 35,366,874 Input Tokens, 2,363,078 Output Tokens
-
-💵 $539.85 Estimated AI Cost This Week
-
-🧠 29 AI Sessions, 40 AI Prompts
-
-GPT                      12,616 lines        █████████████████████████   100.00 % 
-
-🔎 AI Coding Insights:
-🤖 AI-Driven — 100.0% of written lines came from AI
-📚 Verbose Prompter — average 2,283 characters per prompt
-🎯 One-Shot Prompter — average 1 prompts per session
-🚀 High AI Trust — 0.0% of changed lines were hand-edited
+No AI Coding Activity Tracked This Week
 ```
 
 **I Mostly Code in Python** 
