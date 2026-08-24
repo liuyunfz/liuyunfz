@@ -24,21 +24,21 @@ Here are some ideas to get you started:
 **I'm an Early 🐤** 
 
 ```text
-🌞 Morning                59 commits          ██░░░░░░░░░░░░░░░░░░░░░░░   08.42 % 
-🌆 Daytime                302 commits         ███████████░░░░░░░░░░░░░░   43.08 % 
-🌃 Evening                322 commits         ███████████░░░░░░░░░░░░░░   45.93 % 
-🌙 Night                  18 commits          █░░░░░░░░░░░░░░░░░░░░░░░░   02.57 % 
+🌞 Morning                59 commits          ██░░░░░░░░░░░░░░░░░░░░░░░   08.32 % 
+🌆 Daytime                302 commits         ███████████░░░░░░░░░░░░░░   42.60 % 
+🌃 Evening                330 commits         ████████████░░░░░░░░░░░░░   46.54 % 
+🌙 Night                  18 commits          █░░░░░░░░░░░░░░░░░░░░░░░░   02.54 % 
 ```
 📅 **I'm Most Productive on Wednesday** 
 
 ```text
-Monday                   103 commits         ████░░░░░░░░░░░░░░░░░░░░░   14.69 % 
-Tuesday                  79 commits          ███░░░░░░░░░░░░░░░░░░░░░░   11.27 % 
-Wednesday                145 commits         █████░░░░░░░░░░░░░░░░░░░░   20.68 % 
-Thursday                 92 commits          ███░░░░░░░░░░░░░░░░░░░░░░   13.12 % 
-Friday                   76 commits          ███░░░░░░░░░░░░░░░░░░░░░░   10.84 % 
-Saturday                 113 commits         ████░░░░░░░░░░░░░░░░░░░░░   16.12 % 
-Sunday                   93 commits          ███░░░░░░░░░░░░░░░░░░░░░░   13.27 % 
+Monday                   111 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.66 % 
+Tuesday                  79 commits          ███░░░░░░░░░░░░░░░░░░░░░░   11.14 % 
+Wednesday                145 commits         █████░░░░░░░░░░░░░░░░░░░░   20.45 % 
+Thursday                 92 commits          ███░░░░░░░░░░░░░░░░░░░░░░   12.98 % 
+Friday                   76 commits          ███░░░░░░░░░░░░░░░░░░░░░░   10.72 % 
+Saturday                 113 commits         ████░░░░░░░░░░░░░░░░░░░░░   15.94 % 
+Sunday                   93 commits          ███░░░░░░░░░░░░░░░░░░░░░░   13.12 % 
 ```
 
 
@@ -48,36 +48,34 @@ Sunday                   93 commits          ███░░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-Python                   1 hr 54 mins        ███████████████░░░░░░░░░░   61.52 % 
-Markdown                 55 mins             ████████░░░░░░░░░░░░░░░░░   30.05 % 
-HTML                     7 mins              █░░░░░░░░░░░░░░░░░░░░░░░░   04.24 % 
-JSON                     4 mins              █░░░░░░░░░░░░░░░░░░░░░░░░   02.64 % 
-Image (svg)              2 mins              ░░░░░░░░░░░░░░░░░░░░░░░░░   01.55 % 
+Python                   26 mins             ███████████████░░░░░░░░░░   61.34 % 
+Markdown                 8 mins              █████░░░░░░░░░░░░░░░░░░░░   20.12 % 
+HTML                     7 mins              █████░░░░░░░░░░░░░░░░░░░░   18.53 % 
 
 🔥 Editors: 
-Codex Vscode             2 hrs 27 mins       ████████████████████░░░░░   79.19 % 
-GoLand                   38 mins             █████░░░░░░░░░░░░░░░░░░░░   20.81 % 
+Codex Vscode             34 mins             ████████████████████░░░░░   81.47 % 
+GoLand                   7 mins              █████░░░░░░░░░░░░░░░░░░░░   18.53 % 
 ```
 
 🤖 **AI Coding This Week** 
 
 ```text
-⏱ AI Coding Time: 2 hrs 57 mins (95.76%)
+⏱ AI Coding Time: 34 mins (81.47%)
 
-✍️ 707 lines written by AI, 0 lines written by hand (100.0% AI-written)
+✍️ 7 lines written by AI, 0 lines written by hand (100.0% AI-written)
 
-🔤 18,780,320 Input Tokens, 1,576,151 Output Tokens
+🔤 897,996 Input Tokens, 38,704 Output Tokens
 
-💵 $31.41 Estimated AI Cost This Week
+💵 $6.43 Estimated AI Cost This Week
 
-🧠 9 AI Sessions, 14 AI Prompts
+🧠 2 AI Sessions, 6 AI Prompts
 
-GPT                      715 lines           █████████████████████████   100.00 % 
+GPT                      7 lines             █████████████████████████   100.00 % 
 
 🔎 AI Coding Insights:
 🤖 AI-Driven — 100.0% of written lines came from AI
-📝 Concise Prompter — average 92 characters per prompt
-🔁 Iterative Prompter — average 2 prompts per session
+📝 Concise Prompter — average 110 characters per prompt
+🔁 Iterative Prompter — average 3 prompts per session
 🚀 High AI Trust — 0.0% of changed lines were hand-edited
 ```
 
