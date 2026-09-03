@@ -48,36 +48,36 @@ Sunday                   108 commits         ███░░░░░░░░�
 🕑︎ Time Zone: Asia/Shanghai
 
 💬 Programming Languages: 
-JavaScript               3 hrs 24 mins       ██████████░░░░░░░░░░░░░░░   39.78 % 
-TypeScript               2 hrs 35 mins       ████████░░░░░░░░░░░░░░░░░   30.23 % 
-CSS                      55 mins             ███░░░░░░░░░░░░░░░░░░░░░░   10.80 % 
-Markdown                 42 mins             ██░░░░░░░░░░░░░░░░░░░░░░░   08.17 % 
-Text                     32 mins             ██░░░░░░░░░░░░░░░░░░░░░░░   06.36 % 
+JavaScript               3 hrs 15 mins       █████████████░░░░░░░░░░░░   51.27 % 
+TypeScript               58 mins             ████░░░░░░░░░░░░░░░░░░░░░   15.30 % 
+CSS                      55 mins             ████░░░░░░░░░░░░░░░░░░░░░   14.58 % 
+Text                     32 mins             ██░░░░░░░░░░░░░░░░░░░░░░░   08.58 % 
+Markdown                 31 mins             ██░░░░░░░░░░░░░░░░░░░░░░░   08.33 % 
 
 🔥 Editors: 
-IntelliJ IDEA            4 hrs 40 mins       ██████████████░░░░░░░░░░░   54.40 % 
-Codex Vscode             3 hrs 54 mins       ███████████░░░░░░░░░░░░░░   45.60 % 
+IntelliJ IDEA            4 hrs 14 mins       █████████████████░░░░░░░░   66.71 % 
+Codex Vscode             2 hrs 7 mins        ████████░░░░░░░░░░░░░░░░░   33.29 % 
 ```
 
 🤖 **AI Coding This Week** 
 
 ```text
-⏱ AI Coding Time: 8 hrs 35 mins (100.0%)
+⏱ AI Coding Time: 6 hrs 21 mins (100.0%)
 
-✍️ 1,726 lines written by AI, 0 lines written by hand (100.0% AI-written)
+✍️ 1,137 lines written by AI, 0 lines written by hand (100.0% AI-written)
 
-🔤 11,225,022 Input Tokens, 643,892 Output Tokens
+🔤 9,243,684 Input Tokens, 480,228 Output Tokens
 
-💵 $175.05 Estimated AI Cost This Week
+💵 $120.89 Estimated AI Cost This Week
 
-🧠 36 AI Sessions, 126 AI Prompts
+🧠 30 AI Sessions, 114 AI Prompts
 
-GPT                      1,484 lines         ████████████████████░░░░░   79.78 % 
-Codex-Vscode             376 lines           █████░░░░░░░░░░░░░░░░░░░░   20.22 % 
+GPT                      1,219 lines         ████████████████████████░   96.14 % 
+Codex-Vscode             49 lines            █░░░░░░░░░░░░░░░░░░░░░░░░   03.86 % 
 
 🔎 AI Coding Insights:
 🤖 AI-Driven — 100.0% of written lines came from AI
-📚 Verbose Prompter — average 16,052 characters per prompt
+📚 Verbose Prompter — average 17,673 characters per prompt
 🔁 Iterative Prompter — average 4 prompts per session
 🚀 High AI Trust — 0.0% of changed lines were hand-edited
 ```
