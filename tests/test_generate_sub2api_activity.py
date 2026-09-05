@@ -91,6 +91,27 @@ class HTTPErrorOpener:
 
 
 class ActivityCardTests(unittest.TestCase):
+    def test_optional_secret_user_agent_suffix(self) -> None:
+        token = "fixture-only-" + "a" * 52
+        opener = RecordingOpener(FakeResponse(json.dumps(load_fixture("sub2api_valid.json")).encode()))
+        activity_card.fetch_snapshot(
+            "https://example.invalid", "fixture-admin-key",
+            opener=opener, waf_bypass_token=token,
+        )
+        self.assertEqual(opener.request.get_header("User-agent"), f"{activity_card.USER_AGENT}/{token}")
+        self.assertEqual(opener.request.get_header("X-api-key"), "fixture-admin-key")
+        self.assertIsNone(opener.request.get_header("X-profile-card-token"))
+        self.assertNotIn(token, opener.request.full_url)
+        for missing in (None, ""):
+            self.assertEqual(activity_card.build_user_agent(missing), activity_card.USER_AGENT)
+
+    def test_invalid_user_agent_secret_fails_without_echoing_value(self) -> None:
+        for token in ("short", "a" * 257, "a" * 32 + "\r\n", "a" * 32 + " ", "密" * 32):
+            with self.subTest():
+                with self.assertRaises(activity_card.ActivityCardError) as caught:
+                    activity_card.build_user_agent(token)
+                self.assertEqual(str(caught.exception), "SUB2API_WAF_BYPASS_TOKEN is invalid")
+
     def test_fixture_is_sorted_merged_and_sanitized_before_rendering(self) -> None:
         snapshot = activity_card.parse_snapshot(load_fixture("sub2api_valid.json"))
 
