@@ -100,7 +100,7 @@ class StatusCardTests(unittest.TestCase):
         self.assertIn(">—</text>", svg)
         self.assertIn("197d 14h", svg)
         self.assertIn("Homelab · Live Status", svg)
-        self.assertIn("anonymized aggregate telemetry", svg)
+        self.assertIn("configured names", svg)
         self.assertIn('width="680"', svg)
         self.assertIn("Updated 2026-09-05 02:05 UTC", svg)
 
@@ -213,7 +213,57 @@ class StatusCardTests(unittest.TestCase):
         self.assertEqual(request.full_url, "https://example.invalid/api/rpc2")
         self.assertEqual(request.get_header("User-agent"), status_card.USER_AGENT)
         self.assertEqual(request.get_header("Authorization"), "Bearer fixture-token")
-        self.assertEqual(json.loads(request.data), status_card.RPC_REQUEST)
+        self.assertEqual(json.loads(request.data), list(status_card.RPC_REQUESTS))
+
+    def test_batch_response_retains_directory(self) -> None:
+        payload = load_fixture("status_valid.json")
+        catalog = {node_id: {"name": "NAS", "hidden": False} for node_id in payload["result"]}
+        body = json.dumps([payload, {"jsonrpc": "2.0", "id": 2, "result": catalog}]).encode()
+        fetched = status_card.fetch_rpc_response("https://example.invalid", opener=RecordingOpener(FakeResponse(body)))
+        self.assertEqual(fetched[status_card.NODE_CATALOG_KEY], catalog)
+
+    def test_configured_names_are_escaped_and_hidden_nodes_excluded(self) -> None:
+        payload = load_fixture("status_valid.json")
+        first, second = payload["result"]
+        payload[status_card.NODE_CATALOG_KEY] = {
+            first: {"name": 'NAS & <backup>', "hidden": False, "weight": 0},
+            second: {"name": "PRIVATE", "hidden": True, "weight": 0},
+        }
+        states = status_card.parse_node_states(payload, TEST_SALT, now=FIXED_NOW)
+        self.assertEqual([state.display_name for state in states], ['NAS & <backup>'])
+        svg = status_card.render_svg(states, "light", generated_at=FIXED_NOW)
+        self.assertIn("NAS &amp; &lt;backup&gt;", svg)
+        self.assertNotIn("PRIVATE", svg)
+        ET.fromstring(svg)
+
+    def test_duplicate_and_unsafe_names_use_aliases(self) -> None:
+        for names in (("NAS", "nas"), ("host 192.0.2.1", "NAS\u202ehidden"), ("https://secret.invalid", "mail@example.invalid")):
+            with self.subTest(names=names):
+                payload = load_fixture("status_valid.json")
+                payload[status_card.NODE_CATALOG_KEY] = {
+                    node_id: {"name": name, "hidden": False}
+                    for node_id, name in zip(payload["result"], names)
+                }
+                states = status_card.parse_node_states(payload, TEST_SALT, now=FIXED_NOW)
+                self.assertTrue(all(state.display_name.startswith("NODE-") for state in states))
+
+    def test_missing_directory_entry_is_not_published(self) -> None:
+        payload = load_fixture("status_valid.json")
+        first = next(iter(payload["result"]))
+        payload[status_card.NODE_CATALOG_KEY] = {first: {"name": "NAS", "hidden": False}}
+        states = status_card.parse_node_states(payload, TEST_SALT, now=FIXED_NOW)
+        self.assertEqual([state.display_name for state in states], ["NAS"])
+
+    def test_all_hidden_nodes_produce_empty_card_instead_of_retaining_old_names(self) -> None:
+        payload = load_fixture("status_valid.json")
+        payload[status_card.NODE_CATALOG_KEY] = {
+            node_id: {"name": "PRIVATE", "hidden": True} for node_id in payload["result"]
+        }
+        states = status_card.parse_node_states(payload, TEST_SALT, now=FIXED_NOW)
+        self.assertEqual(states, [])
+        svg = status_card.render_svg(states, "light", generated_at=FIXED_NOW)
+        self.assertNotIn("PRIVATE", svg)
+        self.assertIn("0 / 0 online", svg)
 
     def test_root_url_is_expanded_to_the_komari_rpc_endpoint(self) -> None:
         body = json.dumps(load_fixture("status_valid.json")).encode("utf-8")

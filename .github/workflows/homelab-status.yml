@@ -1,4 +1,4 @@
-name: Refresh anonymized profile cards
+name: Refresh privacy-bounded profile cards
 
 on:
   push:
@@ -276,6 +276,7 @@ jobs:
           OUTPUT_DIR: ${{ runner.temp }}/status-card-output
           SUB2API_ADMIN_API_KEY: ${{ secrets.SUB2API_ADMIN_API_KEY }}
           SUB2API_SNAPSHOT_URL: ${{ secrets.SUB2API_SNAPSHOT_URL }}
+          # Optional token is sent in User-Agent and the legacy custom header.
           SUB2API_WAF_BYPASS_TOKEN: ${{ secrets.SUB2API_WAF_BYPASS_TOKEN }}
           SUB2API_WORK_DIR: ${{ runner.temp }}/sub2api-card-output
         run: |
@@ -328,6 +329,9 @@ jobs:
               --output-dir "$SUB2API_WORK_DIR" \
               >"$generator_log" 2>&1; then
             case "$(tail -n 1 "$generator_log" 2>/dev/null || true)" in
+              "activity-card: SUB2API_WAF_BYPASS_TOKEN is invalid")
+                echo "::error::SUB2API_WAF_BYPASS_TOKEN must use only ASCII letters, digits, underscores or hyphens, up to 256 characters. Its value was not logged."
+                ;;
               "activity-card: snapshot administrator key was rejected")
                 echo "::error::Sub2API received x-api-key but reported INVALID_ADMIN_KEY. The GitHub Secret does not match the administrator key stored by the backend reached at SUB2API_SNAPSHOT_URL."
                 ;;

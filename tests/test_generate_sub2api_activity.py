@@ -94,8 +94,8 @@ class ActivityCardTests(unittest.TestCase):
     def test_fixture_is_sorted_merged_and_sanitized_before_rendering(self) -> None:
         snapshot = activity_card.parse_snapshot(load_fixture("sub2api_valid.json"))
 
-        self.assertEqual(snapshot.total_requests, 51_388)
-        self.assertEqual(snapshot.total_tokens, 5_620_000_000)
+        self.assertEqual(snapshot.total_requests, 4_750)
+        self.assertEqual(snapshot.total_tokens, 503_130_000)
         self.assertEqual(
             [point.day.isoformat() for point in snapshot.points],
             ["2026-08-07", "2026-08-08", "2026-08-09"],
@@ -106,15 +106,17 @@ class ActivityCardTests(unittest.TestCase):
         svg = activity_card.render_svg(snapshot, "light", generated_at=FIXED_NOW)
         root = ET.fromstring(svg)
         self.assertEqual(root.attrib["width"], "680")
-        self.assertEqual(root.attrib["height"], "220")
-        self.assertIn("51.4K", svg)
-        self.assertIn("5.62B", svg)
+        self.assertEqual(root.attrib["height"], "336")
+        self.assertIn("4.75K", svg)
+        self.assertIn("503M", svg)
+        for days in (7, 30, 90):
+            self.assertIn(f">{days}D</text>", svg)
         self.assertIn("Requests / day", svg)
         self.assertIn("Tokens / day", svg)
         self.assertIn("Self-hosted AI Gateway", svg)
         self.assertIn("powered by Sub2API", svg)
-        self.assertEqual(svg.count("<polyline "), 2)
-        self.assertEqual(svg.count("<polygon "), 2)
+        self.assertEqual(svg.count("<polyline "), 4)
+        self.assertEqual(svg.count("<polygon "), 4)
         self.assertIn("Updated 2026-09-05 02:05 UTC", svg)
         for forbidden in (
             "PRIVATE-MODEL-SHOULD-NOT-LEAK",
@@ -169,18 +171,18 @@ class ActivityCardTests(unittest.TestCase):
         svg = activity_card.render_svg(snapshot, "dark", generated_at=FIXED_NOW)
 
         ET.fromstring(svg)
-        self.assertEqual(svg.count("No activity"), 2)
+        self.assertEqual(svg.count("No activity"), 6)
         self.assertNotIn("<polyline ", svg)
         self.assertIn(">0</text>", svg)
 
     def test_single_point_and_all_zero_series_render_without_invalid_numbers(self) -> None:
         single = activity_card.parse_snapshot(
             make_payload(
-                [{"date": "2026-09-05", "requests": 42, "total_tokens": 4200}]
+                [{"date": "2026-09-04", "requests": 42, "total_tokens": 4200}]
             )
         )
         single_svg = activity_card.render_svg(single, "light", generated_at=FIXED_NOW)
-        self.assertEqual(single_svg.count("<polyline "), 2)
+        self.assertEqual(single_svg.count("<polyline "), 6)
         self.assertGreaterEqual(single_svg.count("<circle "), 2)
 
         all_zero = activity_card.parse_snapshot(
@@ -201,7 +203,7 @@ class ActivityCardTests(unittest.TestCase):
         large = 987_654_321_012_345_678_901_234
         snapshot = activity_card.parse_snapshot(
             make_payload(
-                [{"date": "2026-09-05", "requests": large, "total_tokens": large}],
+                [{"date": "2026-09-04", "requests": large, "total_tokens": large}],
                 {"total_requests": large, "total_tokens": large},
             )
         )
@@ -288,17 +290,17 @@ class ActivityCardTests(unittest.TestCase):
                     "fixture-waf-token",
                 )
                 self.assertEqual(
-                    request.get_header("User-agent"), activity_card.USER_AGENT
+                    request.get_header("User-agent"), f"{activity_card.USER_AGENT} profile/fixture-waf-token"
                 )
                 parsed_url = urllib.parse.urlsplit(request.full_url)
                 self.assertEqual(
                     parsed_url.path, "/api/v1/admin/dashboard/snapshot-v2"
                 )
                 query = dict(urllib.parse.parse_qsl(parsed_url.query))
-                self.assertEqual(query["start_date"], "2026-08-06")
+                self.assertEqual(query["start_date"], "2026-06-07")
                 self.assertEqual(query["end_date"], "2026-09-04")
                 self.assertEqual(query["granularity"], "day")
-                self.assertEqual(query["include_stats"], "true")
+                self.assertEqual(query["include_stats"], "false")
                 self.assertEqual(query["include_trend"], "true")
                 self.assertEqual(query["include_model_stats"], "false")
                 self.assertEqual(query["include_group_stats"], "false")
@@ -348,6 +350,23 @@ class ActivityCardTests(unittest.TestCase):
             with self.subTest(url=url):
                 with self.assertRaises(activity_card.ActivityCardError):
                     activity_card.fetch_snapshot(url, "fixture-key", opener=FailingOpener())
+
+    def test_windows_use_exact_boundaries_and_fill_missing_days(self) -> None:
+        snapshot = activity_card.parse_snapshot(make_payload([
+            {"date": "2026-06-06", "requests": 999, "total_tokens": 999},
+            {"date": "2026-06-07", "requests": 1, "total_tokens": 10},
+            {"date": "2026-08-06", "requests": 2, "total_tokens": 20},
+            {"date": "2026-08-29", "requests": 3, "total_tokens": 30},
+            {"date": "2026-09-04", "requests": 4, "total_tokens": 40},
+            {"date": "2026-09-05", "requests": 999, "total_tokens": 999},
+        ]))
+        for days, total in ((7, 7), (30, 9), (90, 10)):
+            requests, tokens = activity_card.window_series(snapshot, FIXED_NOW.date(), days)
+            self.assertEqual(len(requests), days)
+            self.assertEqual(sum(requests), total)
+            self.assertEqual(sum(tokens), total * 10)
+        self.assertEqual(activity_card.weekly_daily_averages([10] * 90), [10] * 13)
+        self.assertGreater(activity_card.weekly_daily_averages([1] + [0] * 6)[0], 0)
 
     def test_http_errors_are_reduced_to_safe_categories(self) -> None:
         cases = (
