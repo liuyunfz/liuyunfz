@@ -273,6 +273,7 @@ jobs:
         continue-on-error: true
         if: ${{ steps.plan.outputs.refresh_sub2api == 'true' }}
         env:
+          # A service root URL is accepted; the generator appends the fixed endpoint.
           OUTPUT_DIR: ${{ runner.temp }}/status-card-output
           SUB2API_ADMIN_API_KEY: ${{ secrets.SUB2API_ADMIN_API_KEY }}
           SUB2API_SNAPSHOT_URL: ${{ secrets.SUB2API_SNAPSHOT_URL }}
