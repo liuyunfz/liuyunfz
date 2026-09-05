@@ -75,6 +75,20 @@ class FailingOpener:
         )
 
 
+class HTTPErrorOpener:
+    def __init__(self, status: int) -> None:
+        self.status = status
+
+    def open(self, request: object, timeout: float) -> FakeResponse:
+        raise urllib.error.HTTPError(
+            "https://private-api.example.invalid/admin?key=raw-secret",
+            self.status,
+            "private upstream detail",
+            Message(),
+            None,
+        )
+
+
 class ActivityCardTests(unittest.TestCase):
     def test_fixture_is_sorted_merged_and_sanitized_before_rendering(self) -> None:
         snapshot = activity_card.parse_snapshot(load_fixture("sub2api_valid.json"))
@@ -317,6 +331,26 @@ class ActivityCardTests(unittest.TestCase):
             with self.subTest(url=url):
                 with self.assertRaises(activity_card.ActivityCardError):
                     activity_card.fetch_snapshot(url, "fixture-key", opener=FailingOpener())
+
+    def test_http_errors_are_reduced_to_safe_categories(self) -> None:
+        cases = (
+            (401, "snapshot authentication failed"),
+            (403, "snapshot authentication failed"),
+            (404, "snapshot endpoint was not found"),
+            (500, "snapshot fetch failed"),
+        )
+        for status, expected in cases:
+            with self.subTest(status=status):
+                with self.assertRaisesRegex(
+                    activity_card.ActivityCardError, f"^{expected}$"
+                ) as raised:
+                    activity_card.fetch_snapshot(
+                        "https://example.invalid",
+                        "fixture-key",
+                        opener=HTTPErrorOpener(status),
+                    )
+                self.assertNotIn("private", str(raised.exception))
+                self.assertNotIn("https://", str(raised.exception))
 
     def test_cli_can_generate_from_fixture_without_environment_secrets(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

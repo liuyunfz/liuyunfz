@@ -290,7 +290,13 @@ def fetch_snapshot(
             raw = response.read(MAX_RESPONSE_BYTES + 1)
     except ActivityCardError:
         raise
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, OSError):
+    except urllib.error.HTTPError as error:
+        if error.code in (401, 403):
+            raise ActivityCardError("snapshot authentication failed") from None
+        if error.code == 404:
+            raise ActivityCardError("snapshot endpoint was not found") from None
+        raise ActivityCardError("snapshot fetch failed") from None
+    except (urllib.error.URLError, TimeoutError, OSError):
         raise ActivityCardError("snapshot fetch failed") from None
     except Exception:
         raise ActivityCardError("snapshot fetch failed") from None
