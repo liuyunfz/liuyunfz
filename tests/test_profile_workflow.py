@@ -78,12 +78,14 @@ class ProfileWorkflowTests(unittest.TestCase):
             r"(?s)name: Generate AI gateway activity cards.*?"
             r"id: generate_sub2api.*?continue-on-error: true",
         )
-        guard = (
-            "steps.generate_homelab.outcome != 'failure' && "
-            "steps.generate_sub2api.outcome != 'failure'"
-        )
-        self.assertGreaterEqual(self.text.count(guard), 2)
+        self.assertIn("id: validate", self.text)
+        self.assertIn("steps.generate_homelab.outcome == 'success'", self.text)
+        self.assertIn("steps.generate_homelab.outcome == 'skipped'", self.text)
+        self.assertIn("steps.generate_sub2api.outcome == 'success'", self.text)
+        self.assertIn("steps.generate_sub2api.outcome == 'skipped'", self.text)
+        self.assertIn("steps.validate.outcome == 'success'", self.text)
         self.assertIn("name: Report a failed card source", self.text)
+        self.assertIn("!cancelled()", self.text)
         self.assertIn("steps.generate_homelab.outcome == 'failure'", self.text)
         self.assertIn("steps.generate_sub2api.outcome == 'failure'", self.text)
 
@@ -97,6 +99,10 @@ class ProfileWorkflowTests(unittest.TestCase):
         self.assertIn(
             "SUB2API_SNAPSHOT_URL must be an HTTPS root URL or endpoint", self.text
         )
+        self.assertIn(
+            "Sub2API rejected SUB2API_ADMIN_API_KEY.", self.text
+        )
+        self.assertNotIn("cat \"$generator_log\"", self.text)
 
     def test_publish_is_a_guarded_single_root_commit(self) -> None:
         self.assertIn("init --initial-branch=status-card", self.text)

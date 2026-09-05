@@ -314,7 +314,17 @@ jobs:
           if ! python scripts/generate_sub2api_activity.py \
               --output-dir "$SUB2API_WORK_DIR" \
               >"$generator_log" 2>&1; then
-            echo "::error::AI gateway generation failed; the published cards were left unchanged."
+            case "$(tail -n 1 "$generator_log" 2>/dev/null || true)" in
+              "activity-card: snapshot authentication failed")
+                echo "::error::Sub2API rejected SUB2API_ADMIN_API_KEY. Use the full administrator API key, not a user gateway key, JWT, or masked value."
+                ;;
+              "activity-card: snapshot endpoint was not found")
+                echo "::error::The Sub2API snapshot-v2 endpoint was not found. Check the deployed version or configure the full endpoint path."
+                ;;
+              *)
+                echo "::error::AI gateway generation failed; the published cards were left unchanged."
+                ;;
+            esac
             exit 1
           fi
 
@@ -335,7 +345,8 @@ jobs:
             "$OUTPUT_DIR/"
 
       - name: Validate all publishable output
-        if: ${{ !cancelled() && steps.generate_homelab.outcome != 'failure' && steps.generate_sub2api.outcome != 'failure' }}
+        id: validate
+        if: ${{ (steps.generate_homelab.outcome == 'success' || steps.generate_homelab.outcome == 'skipped') && (steps.generate_sub2api.outcome == 'success' || steps.generate_sub2api.outcome == 'skipped') }}
         env:
           HOMELAB_ALIAS_SALT: ${{ secrets.HOMELAB_ALIAS_SALT }}
           KOMARI_BEARER_TOKEN: ${{ secrets.KOMARI_BEARER_TOKEN }}
@@ -357,7 +368,7 @@ jobs:
           fi
 
       - name: Publish the one-commit status-card branch
-        if: ${{ !cancelled() && steps.generate_homelab.outcome != 'failure' && steps.generate_sub2api.outcome != 'failure' }}
+        if: ${{ steps.validate.outcome == 'success' }}
         env:
           EXPECTED_REMOTE_SHA: ${{ steps.plan.outputs.base_sha }}
           GH_TOKEN: ${{ github.token }}
@@ -480,7 +491,7 @@ jobs:
             origin HEAD:refs/heads/status-card
 
       - name: Report a failed card source
-        if: ${{ always() && (steps.generate_homelab.outcome == 'failure' || steps.generate_sub2api.outcome == 'failure') }}
+        if: ${{ !cancelled() && (steps.generate_homelab.outcome == 'failure' || steps.generate_sub2api.outcome == 'failure') }}
         run: |
           echo "::error::One or more requested card sources failed; no cards were published."
           exit 1
