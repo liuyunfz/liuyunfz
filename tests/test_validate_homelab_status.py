@@ -49,6 +49,7 @@ class OutputValidationTests(unittest.TestCase):
                         "https://private-ai.example/api/v1/admin/dashboard/snapshot-v2"
                     ),
                     "SUB2API_ADMIN_API_KEY": "fixture-admin-key",
+                    "SUB2API_WAF_BYPASS_TOKEN": "fixture-waf-bypass-token",
                 },
                 clear=True,
             ):

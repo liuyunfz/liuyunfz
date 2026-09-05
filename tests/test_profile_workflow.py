@@ -30,7 +30,7 @@ class ProfileWorkflowTests(unittest.TestCase):
         self.assertIn('"23 3 * * *") refresh_sub2api=true', self.text)
         self.assertRegex(
             self.text,
-            r'(?s)\[\[ "\$EVENT_NAME" == "push" \]\].*?refresh_homelab=true.*?refresh_sub2api=true',
+            r'(?s)\[\[ "\$EVENT_NAME" == "push" \]\].*?refresh_homelab=true.*?else',
         )
 
     def test_generates_and_publishes_exactly_four_named_cards(self) -> None:
@@ -128,6 +128,7 @@ class ProfileWorkflowTests(unittest.TestCase):
             "KOMARI_BEARER_TOKEN",
             "SUB2API_SNAPSHOT_URL",
             "SUB2API_ADMIN_API_KEY",
+            "SUB2API_WAF_BYPASS_TOKEN",
         ):
             self.assertIn("${{ secrets." + secret + " }}", self.text)
         self.assertNotRegex(
