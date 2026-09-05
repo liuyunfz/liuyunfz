@@ -67,6 +67,37 @@ class ProfileWorkflowTests(unittest.TestCase):
             self.text.count("the published cards were left unchanged"), 3
         )
 
+    def test_both_sources_are_checked_before_any_failed_run_is_reported(self) -> None:
+        self.assertRegex(
+            self.text,
+            r"(?s)name: Generate homelab cards.*?"
+            r"id: generate_homelab.*?continue-on-error: true",
+        )
+        self.assertRegex(
+            self.text,
+            r"(?s)name: Generate AI gateway activity cards.*?"
+            r"id: generate_sub2api.*?continue-on-error: true",
+        )
+        guard = (
+            "steps.generate_homelab.outcome != 'failure' && "
+            "steps.generate_sub2api.outcome != 'failure'"
+        )
+        self.assertGreaterEqual(self.text.count(guard), 2)
+        self.assertIn("name: Report a failed card source", self.text)
+        self.assertIn("steps.generate_homelab.outcome == 'failure'", self.text)
+        self.assertIn("steps.generate_sub2api.outcome == 'failure'", self.text)
+
+    def test_secret_preflight_messages_do_not_echo_secret_values(self) -> None:
+        self.assertIn(
+            "HOMELAB_ALIAS_SALT must contain at least 16 bytes.", self.text
+        )
+        self.assertIn(
+            "KOMARI_STATUS_URL must be an HTTPS root URL or endpoint", self.text
+        )
+        self.assertIn(
+            "SUB2API_SNAPSHOT_URL must be an HTTPS root URL or endpoint", self.text
+        )
+
     def test_publish_is_a_guarded_single_root_commit(self) -> None:
         self.assertIn("init --initial-branch=status-card", self.text)
         self.assertIn('if [[ "$local_parent_count" -ne 0 ]]', self.text)

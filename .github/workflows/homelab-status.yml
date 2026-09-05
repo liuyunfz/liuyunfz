@@ -195,6 +195,8 @@ jobs:
           } >>"$GITHUB_OUTPUT"
 
       - name: Generate homelab cards
+        id: generate_homelab
+        continue-on-error: true
         if: ${{ steps.plan.outputs.refresh_homelab == 'true' }}
         env:
           HOMELAB_ALIAS_SALT: ${{ secrets.HOMELAB_ALIAS_SALT }}
@@ -209,6 +211,32 @@ jobs:
 
           if [[ -z "${KOMARI_STATUS_URL:-}" || -z "${HOMELAB_ALIAS_SALT:-}" ]]; then
             echo "::error::Required homelab secrets are not configured."
+            exit 1
+          fi
+
+          if ! python - <<'PY'
+          import os
+
+          salt = os.environ.get("HOMELAB_ALIAS_SALT", "")
+          raise SystemExit(0 if len(salt.encode("utf-8")) >= 16 else 1)
+          PY
+          then
+            echo "::error::HOMELAB_ALIAS_SALT must contain at least 16 bytes."
+            exit 1
+          fi
+
+          if ! python - <<'PY'
+          import os
+
+          from scripts.generate_homelab_status import StatusCardError, build_status_url
+
+          try:
+              build_status_url(os.environ.get("KOMARI_STATUS_URL", ""))
+          except StatusCardError:
+              raise SystemExit(1) from None
+          PY
+          then
+            echo "::error::KOMARI_STATUS_URL must be an HTTPS root URL or endpoint without credentials, query parameters, or a fragment."
             exit 1
           fi
 
@@ -241,6 +269,8 @@ jobs:
             "$OUTPUT_DIR/"
 
       - name: Generate AI gateway activity cards
+        id: generate_sub2api
+        continue-on-error: true
         if: ${{ steps.plan.outputs.refresh_sub2api == 'true' }}
         env:
           OUTPUT_DIR: ${{ runner.temp }}/status-card-output
@@ -254,6 +284,24 @@ jobs:
 
           if [[ -z "${SUB2API_SNAPSHOT_URL:-}" || -z "${SUB2API_ADMIN_API_KEY:-}" ]]; then
             echo "::error::Required AI gateway secrets are not configured."
+            exit 1
+          fi
+
+          if ! python - <<'PY'
+          import os
+
+          from scripts.generate_sub2api_activity import (
+              ActivityCardError,
+              build_snapshot_url,
+          )
+
+          try:
+              build_snapshot_url(os.environ.get("SUB2API_SNAPSHOT_URL", ""))
+          except ActivityCardError:
+              raise SystemExit(1) from None
+          PY
+          then
+            echo "::error::SUB2API_SNAPSHOT_URL must be an HTTPS root URL or endpoint without credentials, query parameters, or a fragment."
             exit 1
           fi
 
@@ -287,6 +335,7 @@ jobs:
             "$OUTPUT_DIR/"
 
       - name: Validate all publishable output
+        if: ${{ !cancelled() && steps.generate_homelab.outcome != 'failure' && steps.generate_sub2api.outcome != 'failure' }}
         env:
           HOMELAB_ALIAS_SALT: ${{ secrets.HOMELAB_ALIAS_SALT }}
           KOMARI_BEARER_TOKEN: ${{ secrets.KOMARI_BEARER_TOKEN }}
@@ -308,6 +357,7 @@ jobs:
           fi
 
       - name: Publish the one-commit status-card branch
+        if: ${{ !cancelled() && steps.generate_homelab.outcome != 'failure' && steps.generate_sub2api.outcome != 'failure' }}
         env:
           EXPECTED_REMOTE_SHA: ${{ steps.plan.outputs.base_sha }}
           GH_TOKEN: ${{ github.token }}
@@ -428,3 +478,9 @@ jobs:
           git_with_token -C "$PUBLISH_DIR" push --porcelain \
             "--force-with-lease=refs/heads/status-card:${EXPECTED_REMOTE_SHA}" \
             origin HEAD:refs/heads/status-card
+
+      - name: Report a failed card source
+        if: ${{ always() && (steps.generate_homelab.outcome == 'failure' || steps.generate_sub2api.outcome == 'failure') }}
+        run: |
+          echo "::error::One or more requested card sources failed; no cards were published."
+          exit 1
