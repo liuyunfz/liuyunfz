@@ -107,6 +107,7 @@ jobs:
                 ;;
             esac
           elif [[ "$EVENT_NAME" == "push" ]]; then
+            # Verify both upstreams on push, including after access-rule changes.
             refresh_homelab=true
             refresh_sub2api=true
           else
