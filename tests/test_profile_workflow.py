@@ -100,7 +100,11 @@ class ProfileWorkflowTests(unittest.TestCase):
             "SUB2API_SNAPSHOT_URL must be an HTTPS root URL or endpoint", self.text
         )
         self.assertIn(
-            "Sub2API rejected SUB2API_ADMIN_API_KEY.", self.text
+            "SUB2API_ADMIN_API_KEY does not match the generated administrator-key format",
+            self.text,
+        )
+        self.assertIn(
+            "Sub2API received x-api-key but reported INVALID_ADMIN_KEY.", self.text
         )
         self.assertNotIn("cat \"$generator_log\"", self.text)
 

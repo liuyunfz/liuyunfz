@@ -290,6 +290,18 @@ jobs:
 
           if ! python - <<'PY'
           import os
+          import re
+
+          key = os.environ.get("SUB2API_ADMIN_API_KEY", "")
+          raise SystemExit(0 if re.fullmatch(r"admin-[0-9a-f]{64}", key) else 1)
+          PY
+          then
+            echo "::error::SUB2API_ADMIN_API_KEY does not match the generated administrator-key format (admin- followed by 64 lowercase hexadecimal characters). Its value was not logged."
+            exit 1
+          fi
+
+          if ! python - <<'PY'
+          import os
 
           from scripts.generate_sub2api_activity import (
               ActivityCardError,
@@ -316,11 +328,26 @@ jobs:
               --output-dir "$SUB2API_WORK_DIR" \
               >"$generator_log" 2>&1; then
             case "$(tail -n 1 "$generator_log" 2>/dev/null || true)" in
+              "activity-card: snapshot administrator key was rejected")
+                echo "::error::Sub2API received x-api-key but reported INVALID_ADMIN_KEY. The GitHub Secret does not match the administrator key stored by the backend reached at SUB2API_SNAPSHOT_URL."
+                ;;
+              "activity-card: snapshot authentication header was not received")
+                echo "::error::Sub2API reported that no authentication header arrived. Check whether the reverse proxy forwards x-api-key."
+                ;;
               "activity-card: snapshot authentication failed")
-                echo "::error::Sub2API rejected SUB2API_ADMIN_API_KEY. Use the full administrator API key, not a user gateway key, JWT, or masked value."
+                echo "::error::Sub2API returned HTTP 401 without a recognized error code."
+                ;;
+              "activity-card: snapshot request was forbidden")
+                echo "::error::The Sub2API request was forbidden (HTTP 403). Check proxy, WAF, or source-access rules."
+                ;;
+              "activity-card: snapshot administrator compliance acknowledgement is required")
+                echo "::error::Sub2API requires the administrator compliance acknowledgement before this endpoint can be used."
                 ;;
               "activity-card: snapshot endpoint was not found")
                 echo "::error::The Sub2API snapshot-v2 endpoint was not found. Check the deployed version or configure the full endpoint path."
+                ;;
+              "activity-card: snapshot request was rate limited")
+                echo "::error::The Sub2API request was rate limited; retry after the upstream limit resets."
                 ;;
               *)
                 echo "::error::AI gateway generation failed; the published cards were left unchanged."

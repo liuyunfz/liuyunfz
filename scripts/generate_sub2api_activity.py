@@ -27,6 +27,7 @@ from typing import Any, Mapping, Sequence
 
 USER_AGENT = "sub2api-activity-card/1.0"
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+MAX_ERROR_RESPONSE_BYTES = 16 * 1024
 MAX_RAW_POINTS = 1_000
 ROLLING_DAYS = 30
 MAX_UNIQUE_POINTS = ROLLING_DAYS
@@ -241,6 +242,48 @@ def _validate_timeout(value: float) -> float:
     return float(value)
 
 
+def _read_safe_http_error_code(error: urllib.error.HTTPError) -> str | None:
+    """Read only a bounded, allowlisted error code for safe diagnostics."""
+
+    try:
+        raw = error.read(MAX_ERROR_RESPONSE_BYTES + 1)
+        if len(raw) > MAX_ERROR_RESPONSE_BYTES:
+            return None
+        payload = json.loads(raw.decode("utf-8", errors="strict"))
+    except (AttributeError, OSError, UnicodeError, json.JSONDecodeError, ValueError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    code = payload.get("code")
+    if code in {
+        "ADMIN_COMPLIANCE_ACK_REQUIRED",
+        "FORBIDDEN",
+        "INVALID_ADMIN_KEY",
+        "UNAUTHORIZED",
+    }:
+        return code
+    return None
+
+
+def _safe_http_error_message(error: urllib.error.HTTPError) -> str:
+    code = _read_safe_http_error_code(error)
+    if code == "INVALID_ADMIN_KEY":
+        return "snapshot administrator key was rejected"
+    if code == "UNAUTHORIZED":
+        return "snapshot authentication header was not received"
+    if code == "ADMIN_COMPLIANCE_ACK_REQUIRED" or error.code == 423:
+        return "snapshot administrator compliance acknowledgement is required"
+    if error.code == 401:
+        return "snapshot authentication failed"
+    if error.code == 403:
+        return "snapshot request was forbidden"
+    if error.code == 404:
+        return "snapshot endpoint was not found"
+    if error.code == 429:
+        return "snapshot request was rate limited"
+    return "snapshot fetch failed"
+
+
 def fetch_snapshot(
     snapshot_url: str,
     api_key: str | None,
@@ -291,11 +334,7 @@ def fetch_snapshot(
     except ActivityCardError:
         raise
     except urllib.error.HTTPError as error:
-        if error.code in (401, 403):
-            raise ActivityCardError("snapshot authentication failed") from None
-        if error.code == 404:
-            raise ActivityCardError("snapshot endpoint was not found") from None
-        raise ActivityCardError("snapshot fetch failed") from None
+        raise ActivityCardError(_safe_http_error_message(error)) from None
     except (urllib.error.URLError, TimeoutError, OSError):
         raise ActivityCardError("snapshot fetch failed") from None
     except Exception:
