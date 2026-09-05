@@ -16,7 +16,7 @@
     <img
       src="https://raw.githubusercontent.com/liuyunfz/liuyunfz/status-card/sub2api-activity-light.svg"
       width="680"
-      alt="An anonymized 30-day AI gateway activity chart"
+      alt="AI gateway requests and tokens over 7, 30 and 90 completed days"
     >
   </picture>
 </p>
@@ -34,7 +34,7 @@
     <img
       src="https://raw.githubusercontent.com/liuyunfz/liuyunfz/status-card/homelab-status-light.svg"
       width="680"
-      alt="An anonymized homelab card showing live node state and uptime"
+      alt="Homelab configured node names, online state and uptime"
     >
   </picture>
 </p>

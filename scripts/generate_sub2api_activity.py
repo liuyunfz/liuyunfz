@@ -30,7 +30,8 @@ WAF_BYPASS_HEADER = "x-profile-card-token"
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_ERROR_RESPONSE_BYTES = 16 * 1024
 MAX_RAW_POINTS = 1_000
-ROLLING_DAYS = 30
+ROLLING_DAYS = 90
+DISPLAY_WINDOWS = (7, 30, 90)
 MAX_UNIQUE_POINTS = ROLLING_DAYS
 MAX_COUNTER = 10**30
 DEFAULT_TIMEOUT_SECONDS = 15
@@ -209,7 +210,7 @@ def build_snapshot_url(snapshot_url: str, *, as_of: date | None = None) -> str:
             ("start_date", start_day.isoformat()),
             ("end_date", end_day.isoformat()),
             ("granularity", "day"),
-            ("include_stats", "true"),
+            ("include_stats", "false"),
             ("include_trend", "true"),
             ("include_model_stats", "false"),
             ("include_group_stats", "false"),
@@ -234,7 +235,11 @@ def _validate_api_key(value: str | None) -> str:
 def _validate_optional_header_token(value: str | None) -> str | None:
     if value is None or value == "":
         return None
-    if len(value) > 4_096 or "\r" in value or "\n" in value:
+    if (
+        not isinstance(value, str)
+        or len(value) > 256
+        or any(not (character.isascii() and (character.isalnum() or character in "_-")) for character in value)
+    ):
         raise ActivityCardError("SUB2API_WAF_BYPASS_TOKEN is invalid")
     return value
 
@@ -316,6 +321,7 @@ def fetch_snapshot(
     }
     if bypass_token is not None:
         headers[WAF_BYPASS_HEADER] = bypass_token
+        headers["User-Agent"] = f"{USER_AGENT} profile/{bypass_token}"
     request = urllib.request.Request(
         url,
         headers=headers,
@@ -458,27 +464,9 @@ def parse_snapshot(payload: Mapping[str, Any]) -> ActivitySnapshot:
         derived_requests = _checked_sum(derived_requests, point.requests)
         derived_tokens = _checked_sum(derived_tokens, point.total_tokens)
 
-    stats = data.get("stats")
-    if stats is None:
-        total_requests = derived_requests
-        total_tokens = derived_tokens
-    elif isinstance(stats, Mapping):
-        total_requests = (
-            _parse_counter(stats["total_requests"])
-            if "total_requests" in stats
-            else derived_requests
-        )
-        total_tokens = (
-            _parse_counter(stats["total_tokens"])
-            if "total_tokens" in stats
-            else derived_tokens
-        )
-    else:
-        raise ActivityCardError("snapshot response is invalid")
-
     return ActivitySnapshot(
-        total_requests=total_requests,
-        total_tokens=total_tokens,
+        total_requests=derived_requests,
+        total_tokens=derived_tokens,
         points=points,
     )
 
@@ -506,7 +494,7 @@ def format_compact(value: int) -> str:
 
 
 def _series_coordinates(
-    values: Sequence[int],
+    values: Sequence[int | float],
     *,
     left: float,
     top: float,
@@ -530,28 +518,29 @@ def _series_coordinates(
 def _render_chart(
     *,
     label: str,
-    values: Sequence[int],
+    values: Sequence[int | float],
     top: int,
     color: str,
     theme: Theme,
+    left: float = 246.0,
+    width: float = 408.0,
 ) -> list[str]:
-    left = 246.0
-    width = 408.0
     plot_top = float(top + 12)
     height = 38.0
     bottom = plot_top + height
     maximum = max(values, default=0)
+    peak_label = "&lt;1" if 0 < maximum < 1 else format_compact(round(maximum))
     lines = [
-        f'<text class="chart-label" x="246" y="{top}" fill="{theme.text}">{label}</text>',
+        f'<text class="chart-label" x="{left}" y="{top}" fill="{theme.text}">{label}</text>',
         (
-            f'<text class="chart-peak" x="654" y="{top}" text-anchor="end" '
-            f'fill="{theme.muted}">peak {format_compact(maximum)}</text>'
+            f'<text class="chart-peak" x="{left + width}" y="{top}" text-anchor="end" '
+            f'fill="{theme.muted}">peak {peak_label}</text>'
         ),
     ]
     for fraction in (0.0, 0.5, 1.0):
         y = plot_top + height * fraction
         lines.append(
-            f'<line x1="246" y1="{y:.1f}" x2="654" y2="{y:.1f}" '
+            f'<line x1="{left}" y1="{y:.1f}" x2="{left + width}" y2="{y:.1f}" '
             f'stroke="{theme.grid}" stroke-opacity="0.7"/>'
         )
 
@@ -562,9 +551,9 @@ def _render_chart(
         width=width,
         height=height,
     )
-    if not coordinates:
+    if not coordinates or maximum == 0:
         lines.append(
-            f'<text class="empty" x="450" y="{plot_top + 25:.1f}" '
+            f'<text class="empty" x="{left + width / 2}" y="{plot_top + 25:.1f}" '
             f'text-anchor="middle" fill="{theme.muted}">No activity</text>'
         )
         return lines
@@ -591,6 +580,26 @@ def _utc_now() -> datetime:
     return datetime.now(UTC)
 
 
+def window_series(snapshot: ActivitySnapshot, as_of: date, days: int) -> tuple[list[int], list[int]]:
+    """Use completed UTC days; missing daily rows represent no recorded usage."""
+
+    if days not in DISPLAY_WINDOWS:
+        raise ActivityCardError("activity window is invalid")
+    by_day = {point.day: point for point in snapshot.points}
+    requests, tokens = [], []
+    for offset in range(days, 0, -1):
+        point = by_day.get(as_of - timedelta(days=offset))
+        requests.append(point.requests if point else 0)
+        tokens.append(point.total_tokens if point else 0)
+    return requests, tokens
+
+
+def weekly_daily_averages(values: Sequence[int]) -> list[float]:
+    """Smooth consecutive seven-day bins without inflating the partial bin."""
+
+    return [sum(values[i:i + 7]) / len(values[i:i + 7]) for i in range(0, len(values), 7)]
+
+
 def render_svg(
     snapshot: ActivitySnapshot,
     theme_name: str,
@@ -605,87 +614,78 @@ def render_svg(
     rendered_at = rendered_at.astimezone(UTC)
     updated_label = rendered_at.strftime("%Y-%m-%d %H:%M UTC")
     theme = THEMES[theme_name]
-    request_values = [point.requests for point in snapshot.points]
-    token_values = [point.total_tokens for point in snapshot.points]
 
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         (
-            '<svg xmlns="http://www.w3.org/2000/svg" width="680" height="220" '
-            'viewBox="0 0 680 220" role="img" '
+            '<svg xmlns="http://www.w3.org/2000/svg" width="680" height="336" '
+            'viewBox="0 0 680 336" role="img" '
             'aria-labelledby="activity-title activity-description">'
         ),
         '<title id="activity-title">Self-hosted AI Gateway Activity</title>',
         (
             '<desc id="activity-description">'
-            f'{snapshot.total_requests} requests and {snapshot.total_tokens} tokens '
-            f'across {len(snapshot.points)} daily samples. Updated {updated_label}.'
+            'Requests and tokens over the last 7, 30, and 90 completed UTC days. '
+            f'Each chart is independently scaled. Updated {updated_label}.'
             '</desc>'
         ),
         (
             '<style>'
             'text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}'
             '.title{font-size:19px;font-weight:700}'
-            '.badge{font-size:10px;font-weight:700;letter-spacing:.08em}'
-            '.metric-label{font-size:11px;font-weight:700;letter-spacing:.08em}'
-            '.metric{font-size:28px;font-weight:700}'
-            '.chart-label{font-size:12px;font-weight:650}'
+            '.badge{font-size:12px;font-weight:700}'
+            '.metric-label{font-size:10px;font-weight:700}'
+            '.metric{font-weight:700}'
+            '.chart-label{font-size:10px;font-weight:650}'
             '.chart-peak,.footer,.empty{font-size:10px}'
             '</style>'
         ),
         (
-            f'<rect x="0.5" y="0.5" width="679" height="219" rx="14" '
+            f'<rect x="0.5" y="0.5" width="679" height="335" rx="8" '
             f'fill="{theme.background}" stroke="{theme.border}"/>'
         ),
         (
             f'<text class="title" x="24" y="31" fill="{theme.text}">'
             'Self-hosted AI Gateway</text>'
         ),
-        (
-            f'<rect x="574" y="14" width="80" height="25" rx="12.5" '
-            f'fill="{theme.badge_background}"/>'
-        ),
-        (
-            f'<text class="badge" x="614" y="30" text-anchor="middle" '
-            f'fill="{theme.badge_text}">LAST 30D</text>'
-        ),
-        f'<text class="metric-label" x="24" y="67" fill="{theme.muted}">REQUESTS</text>',
-        (
-            f'<text class="metric" x="24" y="99" fill="{theme.text}">'
-            f'{format_compact(snapshot.total_requests)}</text>'
-        ),
-        f'<line x1="24" y1="115" x2="198" y2="115" stroke="{theme.grid}"/>',
-        f'<text class="metric-label" x="24" y="139" fill="{theme.muted}">TOKENS</text>',
-        (
-            f'<text class="metric" x="24" y="171" fill="{theme.text}">'
-            f'{format_compact(snapshot.total_tokens)}</text>'
-        ),
-        f'<line x1="222" y1="51" x2="222" y2="187" stroke="{theme.grid}"/>',
+        f'<text class="footer" x="654" y="30" text-anchor="end" fill="{theme.muted}">COMPLETED UTC DAYS</text>',
+        f'<line x1="24" y1="45" x2="654" y2="45" stroke="{theme.grid}"/>',
     ]
-    lines.extend(
-        _render_chart(
-            label="Requests / day",
-            values=request_values,
-            top=55,
-            color=theme.requests,
-            theme=theme,
-        )
-    )
-    lines.extend(
-        _render_chart(
-            label="Tokens / day",
-            values=token_values,
-            top=128,
-            color=theme.tokens,
-            theme=theme,
-        )
-    )
+    for index, days in enumerate(DISPLAY_WINDOWS):
+        left = 24 + index * 220
+        request_values, token_values = window_series(snapshot, rendered_at.date(), days)
+        request_label = format_compact(sum(request_values))
+        token_label = format_compact(sum(token_values))
+        request_size = min(25, 180 / max(1, len(request_label)) / 0.65)
+        token_size = min(25, 180 / max(1, len(token_label)) / 0.65)
+        start = (rendered_at.date() - timedelta(days=days)).strftime("%b %d")
+        end = (rendered_at.date() - timedelta(days=1)).strftime("%b %d")
+        if index:
+            lines.append(f'<line x1="{left - 13}" y1="58" x2="{left - 13}" y2="291" stroke="{theme.grid}"/>')
+        lines.extend([
+            f'<text class="badge" x="{left}" y="67" fill="{theme.badge_text}">{days}D</text>',
+            f'<text class="footer" x="{left + 190}" y="67" text-anchor="end" fill="{theme.muted}">{start} - {end}</text>',
+            f'<text class="metric-label" x="{left}" y="94" fill="{theme.muted}">REQUESTS</text>',
+            f'<text class="metric" font-size="{request_size:.1f}" x="{left}" y="120" fill="{theme.text}">{request_label}</text>',
+            f'<text class="metric-label" x="{left}" y="200" fill="{theme.muted}">TOKENS</text>',
+            f'<text class="metric" font-size="{token_size:.1f}" x="{left}" y="226" fill="{theme.text}">{token_label}</text>',
+        ])
+        if days == 90:
+            request_values = weekly_daily_averages(request_values)
+            token_values = weekly_daily_averages(token_values)
+        for label, values, top, color in (
+            ("Requests / day", request_values, 137, theme.requests),
+            ("Tokens / day", token_values, 243, theme.tokens),
+        ):
+            lines.extend(_render_chart(label=label, values=values, top=top,
+                                       color=color, theme=theme, left=left, width=190))
     lines.extend(
         [
             (
-                f'<text class="footer" x="24" y="204" fill="{theme.muted}">'
+                f'<text class="footer" x="24" y="321" fill="{theme.muted}">'
                 f'powered by Sub2API · Updated {updated_label}</text>'
             ),
+            f'<text class="footer" x="654" y="321" text-anchor="end" fill="{theme.muted}">90D: weekly daily avg · separate scales</text>',
             '</svg>',
         ]
     )

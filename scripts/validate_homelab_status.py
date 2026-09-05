@@ -81,6 +81,7 @@ ALLOWED_ATTRIBUTES = {
     "fill-opacity",
     "stroke-linecap",
     "stroke-linejoin",
+    "font-size",
 }
 UNSAFE_FRAGMENTS = ("javascript:", "data:", "@import", "url(")
 

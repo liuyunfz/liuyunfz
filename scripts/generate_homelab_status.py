@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Generate anonymized SVG status cards from Komari's JSON-RPC endpoint.
+"""Generate privacy-bounded SVG status cards from Komari's JSON-RPC endpoint.
 
-Only the online state and uptime are retained for rendering. Node identifiers
-are converted to deterministic HMAC aliases and never written to disk or logs.
+Only configured display names, online state, and uptime are retained for
+rendering. Unsafe or duplicate names fall back to deterministic HMAC aliases;
+node identifiers are never written to disk or logs.
 """
 
 from __future__ import annotations
@@ -11,15 +12,18 @@ import argparse
 import base64
 import hashlib
 import hmac
+import html
 import json
 import math
 import os
+import re
 import sys
 import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
+import unicodedata
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -33,9 +37,18 @@ RPC_REQUEST = {
     "params": {},
     "id": 1,
 }
+NODES_REQUEST = {
+    "jsonrpc": "2.0",
+    "method": "common:getNodes",
+    "params": {},
+    "id": 2,
+}
+RPC_REQUESTS = (NODES_REQUEST, RPC_REQUEST)
+NODE_CATALOG_KEY = "_node_catalog"
 USER_AGENT = "homelab-status-card/1.0"
 MAX_RESPONSE_BYTES = 1_048_576
 MAX_NODES = 64
+MAX_NODE_NAME_CHARS = 48
 MAX_UPTIME_SECONDS = 100 * 366 * 86_400
 MIN_SALT_BYTES = 16
 MIN_ALIAS_LENGTH = 6
@@ -55,15 +68,23 @@ class StatusCardError(RuntimeError):
 @dataclass(frozen=True)
 class _RawNodeState:
     node_id: str
+    display_name: str | None
+    display_order: int
     online: bool
     uptime_seconds: int
 
 
 @dataclass(frozen=True)
 class NodeState:
-    alias: str
+    display_name: str
     online: bool
     uptime_seconds: int
+
+    @property
+    def alias(self) -> str:
+        """Compatibility alias for callers that consumed the old field name."""
+
+        return self.display_name
 
 
 @dataclass(frozen=True)
@@ -204,7 +225,7 @@ def fetch_rpc_response(
     token = _validate_token(bearer_token)
     timeout = _validate_positive_number(timeout_seconds, "timeout", 60)
 
-    body = json.dumps(RPC_REQUEST, separators=(",", ":")).encode("utf-8")
+    body = json.dumps(RPC_REQUESTS, separators=(",", ":")).encode("utf-8")
     headers = {
         "Accept": "application/json",
         "Accept-Encoding": "identity",
@@ -258,6 +279,20 @@ def fetch_rpc_response(
     except Exception:
         raise StatusCardError("status fetch failed") from None
 
+    if isinstance(payload, list):
+        if len(payload) != 2 or not all(isinstance(item, dict) for item in payload):
+            raise StatusCardError("status response is invalid")
+        responses = {item.get("id"): item for item in payload}
+        if set(responses) != {RPC_REQUEST["id"], NODES_REQUEST["id"]}:
+            raise StatusCardError("status response is invalid")
+        status_payload = responses[RPC_REQUEST["id"]]
+        nodes_payload = responses[NODES_REQUEST["id"]]
+        for response in (status_payload, nodes_payload):
+            if response.get("jsonrpc") != "2.0" or "error" in response:
+                raise StatusCardError("status response is invalid")
+        payload = dict(status_payload)
+        payload[NODE_CATALOG_KEY] = nodes_payload.get("result")
+
     if not isinstance(payload, dict):
         raise StatusCardError("status response is invalid")
     return payload
@@ -288,6 +323,62 @@ def _validate_node_id(value: Any) -> str:
     except (ValueError, AttributeError):
         raise StatusCardError("status response is invalid") from None
     return value
+
+
+def _safe_display_name(value: Any) -> str | None:
+    if not isinstance(value, str):
+        return None
+    name = value.strip()
+    if (
+        not name
+        or len(name) > MAX_NODE_NAME_CHARS
+        or any(unicodedata.category(character).startswith("C") for character in name)
+    ):
+        return None
+
+    lowered = name.casefold()
+    if "://" in lowered or "@" in name:
+        return None
+    if any(character in name for character in ("/", "\\")):
+        return None
+    if _looks_like_uuid_or_address(name) or re.search(
+        r"(?:\d{1,3}\.){3}\d{1,3}|[0-9a-fA-F]{8}-[0-9a-fA-F-]{27,}"
+        r"|[0-9a-fA-F]{32}|(?:[0-9a-fA-F]{0,4}:){2,}[0-9a-fA-F]{0,4}", name
+    ):
+        return None
+    return name
+
+
+def _looks_like_uuid_or_address(value: str) -> bool:
+    compact = value.replace("-", "")
+    if len(compact) == 32:
+        try:
+            int(compact, 16)
+        except ValueError:
+            pass
+        else:
+            return True
+
+    parts = value.split(".")
+    if len(parts) == 4:
+        try:
+            octets = [int(part) for part in parts]
+        except ValueError:
+            pass
+        else:
+            if all(0 <= octet <= 255 for octet in octets):
+                return True
+
+    if value.count(":") >= 2:
+        try:
+            import ipaddress
+
+            ipaddress.ip_address(value)
+        except ValueError:
+            pass
+        else:
+            return True
+    return False
 
 
 def _alias_digest(salt: bytes, node_id: str) -> str:
@@ -335,7 +426,7 @@ def parse_node_states(
     now: datetime | None = None,
     max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
 ) -> list[NodeState]:
-    """Validate a response and retain only aliases, online state, and uptime."""
+    """Retain visible configured names, online state, and uptime only."""
 
     if isinstance(max_age_seconds, bool) or not isinstance(max_age_seconds, int):
         raise StatusCardError("max age is invalid")
@@ -355,12 +446,34 @@ def parse_node_states(
         raise StatusCardError("status response is invalid")
 
     result = payload.get("result")
-    if not isinstance(result, Mapping) or not result or len(result) > MAX_NODES:
+    if (
+        not isinstance(result, Mapping)
+        or (not result and NODE_CATALOG_KEY not in payload)
+        or len(result) > MAX_NODES
+    ):
         raise StatusCardError("status response is invalid")
+
+    catalog = payload.get(NODE_CATALOG_KEY)
+    visible: dict[str, tuple[str | None, int]] = {}
+    if NODE_CATALOG_KEY in payload:
+        if not isinstance(catalog, Mapping) or len(catalog) > MAX_NODES:
+            raise StatusCardError("node directory is invalid")
+        for node_id, entry in catalog.items():
+            _validate_node_id(node_id)
+            if not isinstance(entry, Mapping) or not isinstance(entry.get("hidden"), bool):
+                raise StatusCardError("node directory is invalid")
+            if entry["hidden"]:
+                continue
+            weight = entry.get("weight", 0)
+            if isinstance(weight, bool) or not isinstance(weight, int):
+                raise StatusCardError("node directory is invalid")
+            visible[node_id] = (_safe_display_name(entry.get("name")), weight)
 
     raw_states: list[_RawNodeState] = []
     for raw_node_id, raw_status in result.items():
         node_id = _validate_node_id(raw_node_id)
+        if catalog is not None and node_id not in visible:
+            continue
         if not isinstance(raw_status, Mapping):
             raise StatusCardError("status response is invalid")
 
@@ -386,21 +499,36 @@ def parse_node_states(
         raw_states.append(
             _RawNodeState(
                 node_id=node_id,
+                display_name=visible.get(node_id, (None, 0))[0],
+                display_order=visible.get(node_id, (None, 0))[1],
                 online=online,
                 uptime_seconds=uptime,
             )
         )
 
     aliases = derive_aliases((state.node_id for state in raw_states), salt)
+    name_counts: dict[str, int] = {}
+    for state in raw_states:
+        if state.display_name:
+            key = state.display_name.casefold()
+            name_counts[key] = name_counts.get(key, 0) + 1
+    if catalog is not None:
+        raw_states.sort(key=lambda state: (state.display_order, state.display_name or aliases[state.node_id]))
     sanitized = [
         NodeState(
-            alias=aliases[state.node_id],
+            display_name=(
+                state.display_name
+                if state.display_name
+                and name_counts[state.display_name.casefold()] == 1
+                and not state.display_name.startswith("NODE-")
+                else aliases[state.node_id]
+            ),
             online=state.online,
             uptime_seconds=state.uptime_seconds,
         )
         for state in raw_states
     ]
-    return sorted(sanitized, key=lambda state: state.alias)
+    return sanitized if catalog is not None else sorted(sanitized, key=lambda state: state.alias)
 
 
 def format_uptime(seconds: int) -> str:
@@ -422,7 +550,7 @@ def render_svg(
     *,
     generated_at: datetime | None = None,
 ) -> str:
-    if theme_name not in THEMES or not states:
+    if theme_name not in THEMES:
         raise StatusCardError("could not render status card")
     rendered_at = generated_at or _utc_now()
     if rendered_at.tzinfo is None:
@@ -454,8 +582,8 @@ def render_svg(
         '<title id="card-title">Homelab Status</title>',
         (
             '<desc id="card-description">'
-            f'{online_count} of {len(states)} anonymized nodes online. '
-            f'{node_descriptions} Updated {updated_label}.'
+            f'{online_count} of {len(states)} nodes online. '
+            f'{html.escape(node_descriptions)} Updated {updated_label}.'
             '</desc>'
         ),
         (
@@ -463,7 +591,7 @@ def render_svg(
             'text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}'
             '.title{font-size:20px;font-weight:700}'
             '.subtitle,.label,.footer{font-size:12px}'
-            '.alias,.state,.uptime{font-size:13px;font-weight:600}'
+            '.state,.uptime{font-size:13px;font-weight:600}.alias{font-weight:600}'
             '.label{font-weight:600;letter-spacing:.08em}'
             '</style>'
         ),
@@ -477,7 +605,7 @@ def render_svg(
         ),
         (
             f'<text class="subtitle" x="28" y="58" fill="{theme.muted}">'
-            'anonymized aggregate telemetry</text>'
+            'configured names · state · uptime</text>'
         ),
         (
             f'<rect x="516" y="20" width="136" height="32" rx="16" '
@@ -502,6 +630,11 @@ def render_svg(
         state_label = "ONLINE" if state.online else "OFFLINE"
         state_color = theme.online if state.online else theme.offline
         uptime_label = format_uptime(state.uptime_seconds) if state.online else "—"
+        name_width = sum(
+            13 if unicodedata.east_asian_width(c) in ("W", "F") else 8
+            for c in state.display_name
+        )
+        name_font_size = min(13, 390 / max(1, name_width) * 13)
         lines.extend(
             [
                 (
@@ -510,7 +643,8 @@ def render_svg(
                 ),
                 (
                     f'<text class="alias" x="36" y="{baseline}" '
-                    f'fill="{theme.text}">{state.alias}</text>'
+                    f'fill="{theme.text}" font-size="{name_font_size:.1f}">'
+                    f'{html.escape(state.display_name)}</text>'
                 ),
                 f'<circle cx="448" cy="{baseline - 4}" r="5" fill="{state_color}"/>',
                 (
@@ -613,7 +747,7 @@ def generate_cards_from_payload(
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Generate anonymized light and dark Komari status cards."
+        description="Generate privacy-bounded light and dark Komari status cards."
     )
     parser.add_argument(
         "--output-dir",
@@ -658,7 +792,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"status-card: {error}", file=sys.stderr)
         return 1
 
-    print(f"status-card: generated 2 cards for {len(states)} anonymized nodes")
+    print(f"status-card: generated 2 cards for {len(states)} visible nodes")
     return 0
 
 
