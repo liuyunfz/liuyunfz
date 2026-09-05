@@ -76,8 +76,9 @@ class FailingOpener:
 
 
 class HTTPErrorOpener:
-    def __init__(self, status: int) -> None:
+    def __init__(self, status: int, body: bytes = b"") -> None:
         self.status = status
+        self.body = body
 
     def open(self, request: object, timeout: float) -> FakeResponse:
         raise urllib.error.HTTPError(
@@ -85,7 +86,7 @@ class HTTPErrorOpener:
             self.status,
             "private upstream detail",
             Message(),
-            None,
+            io.BytesIO(self.body),
         )
 
 
@@ -334,12 +335,28 @@ class ActivityCardTests(unittest.TestCase):
 
     def test_http_errors_are_reduced_to_safe_categories(self) -> None:
         cases = (
-            (401, "snapshot authentication failed"),
-            (403, "snapshot authentication failed"),
-            (404, "snapshot endpoint was not found"),
-            (500, "snapshot fetch failed"),
+            (
+                401,
+                b'{"code":"INVALID_ADMIN_KEY","message":"private"}',
+                "snapshot administrator key was rejected",
+            ),
+            (
+                401,
+                b'{"code":"UNAUTHORIZED","message":"private"}',
+                "snapshot authentication header was not received",
+            ),
+            (401, b'{"code":"UNKNOWN"}', "snapshot authentication failed"),
+            (403, b"private proxy page", "snapshot request was forbidden"),
+            (
+                423,
+                b'{"code":"ADMIN_COMPLIANCE_ACK_REQUIRED"}',
+                "snapshot administrator compliance acknowledgement is required",
+            ),
+            (404, b"", "snapshot endpoint was not found"),
+            (429, b"", "snapshot request was rate limited"),
+            (500, b"", "snapshot fetch failed"),
         )
-        for status, expected in cases:
+        for status, body, expected in cases:
             with self.subTest(status=status):
                 with self.assertRaisesRegex(
                     activity_card.ActivityCardError, f"^{expected}$"
@@ -347,7 +364,7 @@ class ActivityCardTests(unittest.TestCase):
                     activity_card.fetch_snapshot(
                         "https://example.invalid",
                         "fixture-key",
-                        opener=HTTPErrorOpener(status),
+                        opener=HTTPErrorOpener(status, body),
                     )
                 self.assertNotIn("private", str(raised.exception))
                 self.assertNotIn("https://", str(raised.exception))
