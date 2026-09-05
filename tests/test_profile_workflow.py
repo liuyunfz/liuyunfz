@@ -128,7 +128,6 @@ class ProfileWorkflowTests(unittest.TestCase):
             "KOMARI_BEARER_TOKEN",
             "SUB2API_SNAPSHOT_URL",
             "SUB2API_ADMIN_API_KEY",
-            "SUB2API_WAF_BYPASS_TOKEN",
         ):
             self.assertIn("${{ secrets." + secret + " }}", self.text)
         self.assertNotRegex(
@@ -141,6 +140,7 @@ class ProfileWorkflowTests(unittest.TestCase):
         self.assertIn('>"$validator_log" 2>&1', self.text)
         self.assertNotIn("toJson(secrets)", self.text)
         self.assertNotIn("ACTIONS_STEP_DEBUG", self.text)
+        self.assertNotIn("SUB2API_WAF_BYPASS_TOKEN", self.text)
 
     def test_actions_are_pinned_and_checkout_does_not_persist_credentials(self) -> None:
         uses = re.findall(r"(?m)^\s*-?\s*uses:\s*([^\s#]+)", self.text)

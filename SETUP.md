@@ -16,21 +16,17 @@ by Sub2API; deleted history cannot be recovered by the card.
 
 ## ESA WAF rule
 
-Create a separate random token, for example with `openssl rand -hex 32`, and put
-it in the GitHub Actions secret `SUB2API_WAF_BYPASS_TOKEN`. Do not use the admin
-API key as this token. Allowed characters are ASCII letters, digits, `_` and `-`.
-
-The request's exact User-Agent becomes:
+The request uses a fixed public User-Agent, without a WAF token:
 
 ```text
-sub2api-activity-card/1.0 profile/<the-token-you-generated>
+sub2api-activity-card/1.0 profile
 ```
 
 In ESA, match all available conditions together:
 
 - Hostname equals the Sub2API hostname.
 - URI path equals `/api/v1/admin/dashboard/snapshot-v2`.
-- User Agent equals the complete string above.
+- User Agent equals the string above, or matches the existing prefix rule.
 - HTTP method equals `GET`, if supported by the rule editor.
 
 If the editor only offers the full URI rather than URI path, the request includes
@@ -40,10 +36,11 @@ Skip only the rule or protection that causes the rejection, where ESA allows
 that scope. Put the exception before the rejecting rule and verify its event
 log. Do not disable the entire WAF or broadly allow overseas traffic.
 
-User-Agent is spoofable and can appear in access logs. This token is a scoped
-WAF exception marker, not an authentication replacement: Sub2API still checks
-the independent administrator key in `x-api-key`. The legacy
-`x-profile-card-token` header is also sent for compatibility.
+User-Agent is public and spoofable. Anyone can copy it to match this WAF
+exception; it is not authentication or a secret. Sub2API still checks the
+administrator key in `x-api-key`. No `x-profile-card-token` header is sent and
+`SUB2API_WAF_BYPASS_TOKEN` is no longer read. An existing secret with that name
+can be removed from GitHub, but leaving it set does not affect these requests.
 
 After configuring the exception, run **Refresh privacy-bounded profile cards**
 with target `sub2api` or `both`. Matching code push events refresh both cards;
