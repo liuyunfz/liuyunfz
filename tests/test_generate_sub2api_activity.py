@@ -250,31 +250,51 @@ class ActivityCardTests(unittest.TestCase):
 
     def test_fetch_uses_get_api_key_and_safe_error_messages(self) -> None:
         body = json.dumps(load_fixture("sub2api_valid.json")).encode("utf-8")
-        opener = RecordingOpener(FakeResponse(body))
-        payload = activity_card.fetch_snapshot(
-            "https://example.invalid/api/v1/admin/dashboard/snapshot-v2",
+        for root_url in ("https://example.invalid", "https://example.invalid/"):
+            with self.subTest(root_url=root_url):
+                opener = RecordingOpener(FakeResponse(body))
+                payload = activity_card.fetch_snapshot(
+                    root_url,
+                    "fixture-admin-key",
+                    timeout_seconds=9,
+                    opener=opener,
+                    as_of=FIXED_NOW.date(),
+                )
+
+                self.assertEqual(payload["code"], 0)
+                self.assertEqual(opener.timeout, 9)
+                request = opener.request
+                self.assertIsNotNone(request)
+                self.assertEqual(request.get_method(), "GET")
+                self.assertEqual(request.get_header("X-api-key"), "fixture-admin-key")
+                self.assertEqual(
+                    request.get_header("User-agent"), activity_card.USER_AGENT
+                )
+                parsed_url = urllib.parse.urlsplit(request.full_url)
+                self.assertEqual(
+                    parsed_url.path, "/api/v1/admin/dashboard/snapshot-v2"
+                )
+                query = dict(urllib.parse.parse_qsl(parsed_url.query))
+                self.assertEqual(query["start_date"], "2026-08-06")
+                self.assertEqual(query["end_date"], "2026-09-04")
+                self.assertEqual(query["granularity"], "day")
+                self.assertEqual(query["include_stats"], "true")
+                self.assertEqual(query["include_trend"], "true")
+                self.assertEqual(query["include_model_stats"], "false")
+                self.assertEqual(query["include_group_stats"], "false")
+                self.assertEqual(query["include_users_trend"], "false")
+
+        custom_opener = RecordingOpener(FakeResponse(body))
+        activity_card.fetch_snapshot(
+            "https://example.invalid/private/dashboard-snapshot",
             "fixture-admin-key",
-            timeout_seconds=9,
-            opener=opener,
+            opener=custom_opener,
             as_of=FIXED_NOW.date(),
         )
-
-        self.assertEqual(payload["code"], 0)
-        self.assertEqual(opener.timeout, 9)
-        request = opener.request
-        self.assertIsNotNone(request)
-        self.assertEqual(request.get_method(), "GET")
-        self.assertEqual(request.get_header("X-api-key"), "fixture-admin-key")
-        self.assertEqual(request.get_header("User-agent"), activity_card.USER_AGENT)
-        query = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(request.full_url).query))
-        self.assertEqual(query["start_date"], "2026-08-06")
-        self.assertEqual(query["end_date"], "2026-09-04")
-        self.assertEqual(query["granularity"], "day")
-        self.assertEqual(query["include_stats"], "true")
-        self.assertEqual(query["include_trend"], "true")
-        self.assertEqual(query["include_model_stats"], "false")
-        self.assertEqual(query["include_group_stats"], "false")
-        self.assertEqual(query["include_users_trend"], "false")
+        self.assertEqual(
+            urllib.parse.urlsplit(custom_opener.request.full_url).path,
+            "/private/dashboard-snapshot",
+        )
 
         with self.assertRaises(activity_card.ActivityCardError) as raised:
             activity_card.fetch_snapshot(

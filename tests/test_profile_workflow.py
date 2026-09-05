@@ -15,6 +15,10 @@ class ProfileWorkflowTests(unittest.TestCase):
         cls.text = WORKFLOW.read_text(encoding="utf-8")
 
     def test_has_separate_schedules_and_manual_targets(self) -> None:
+        self.assertRegex(
+            self.text,
+            r"(?s)push:\s*\n\s*branches:\s*\n\s*- master.*?scripts/\*\*.*?tests/\*\*",
+        )
         self.assertIn('- cron: "17,47 * * * *"', self.text)
         self.assertIn('- cron: "23 3 * * *"', self.text)
         self.assertRegex(
@@ -24,6 +28,10 @@ class ProfileWorkflowTests(unittest.TestCase):
         )
         self.assertIn('"17,47 * * * *") refresh_homelab=true', self.text)
         self.assertIn('"23 3 * * *") refresh_sub2api=true', self.text)
+        self.assertRegex(
+            self.text,
+            r'(?s)\[\[ "\$EVENT_NAME" == "push" \]\].*?refresh_homelab=true.*?refresh_sub2api=true',
+        )
 
     def test_generates_and_publishes_exactly_four_named_cards(self) -> None:
         self.assertIn("scripts/generate_homelab_status.py", self.text)

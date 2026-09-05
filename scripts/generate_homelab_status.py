@@ -117,7 +117,7 @@ class _NoRedirectHandler(urllib.request.HTTPRedirectHandler):
         return None
 
 
-def _validate_status_url(value: str) -> str:
+def _validate_status_url(value: str) -> urllib.parse.SplitResult:
     if (
         not value
         or value != value.strip()
@@ -138,11 +138,21 @@ def _validate_status_url(value: str) -> str:
         or parsed.password is not None
         or parsed.query
         or parsed.fragment
-        or not parsed.path.startswith("/")
+        or (parsed.path and not parsed.path.startswith("/"))
         or (port is not None and not 1 <= port <= 65535)
     ):
         raise StatusCardError("KOMARI_STATUS_URL is missing or invalid")
-    return value
+    return parsed
+
+
+def build_status_url(status_url: str) -> str:
+    """Accept either a Komari root URL or an explicit JSON-RPC endpoint."""
+
+    parsed = _validate_status_url(status_url)
+    path = parsed.path
+    if path in ("", "/"):
+        path = "/api/rpc2"
+    return urllib.parse.urlunsplit(parsed._replace(path=path))
 
 
 def _validate_salt(salt: str) -> bytes:
@@ -190,7 +200,7 @@ def fetch_rpc_response(
 ) -> Mapping[str, Any]:
     """Fetch and decode one bounded JSON-RPC response without logging secrets."""
 
-    url = _validate_status_url(status_url)
+    url = build_status_url(status_url)
     token = _validate_token(bearer_token)
     timeout = _validate_positive_number(timeout_seconds, "timeout", 60)
 

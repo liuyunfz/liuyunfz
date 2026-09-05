@@ -210,9 +210,44 @@ class StatusCardTests(unittest.TestCase):
         request = opener.request
         self.assertIsNotNone(request)
         self.assertEqual(request.get_method(), "POST")
+        self.assertEqual(request.full_url, "https://example.invalid/api/rpc2")
         self.assertEqual(request.get_header("User-agent"), status_card.USER_AGENT)
         self.assertEqual(request.get_header("Authorization"), "Bearer fixture-token")
         self.assertEqual(json.loads(request.data), status_card.RPC_REQUEST)
+
+    def test_root_url_is_expanded_to_the_komari_rpc_endpoint(self) -> None:
+        body = json.dumps(load_fixture("status_valid.json")).encode("utf-8")
+        for root_url in (
+            "https://monitor.example.invalid",
+            "https://monitor.example.invalid/",
+        ):
+            with self.subTest(root_url=root_url):
+                opener = RecordingOpener(FakeResponse(body))
+                status_card.fetch_rpc_response(
+                    root_url,
+                    bearer_token=None,
+                    opener=opener,
+                )
+
+                self.assertEqual(
+                    opener.request.full_url,
+                    "https://monitor.example.invalid/api/rpc2",
+                )
+
+    def test_explicit_komari_path_is_preserved(self) -> None:
+        body = json.dumps(load_fixture("status_valid.json")).encode("utf-8")
+        opener = RecordingOpener(FakeResponse(body))
+
+        status_card.fetch_rpc_response(
+            "https://monitor.example.invalid/private/komari-rpc",
+            bearer_token=None,
+            opener=opener,
+        )
+
+        self.assertEqual(
+            opener.request.full_url,
+            "https://monitor.example.invalid/private/komari-rpc",
+        )
 
     def test_fetch_error_message_never_contains_url_or_raw_identifier(self) -> None:
         with self.assertRaises(status_card.StatusCardError) as raised:

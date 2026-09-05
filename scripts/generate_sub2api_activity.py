@@ -182,7 +182,7 @@ def _validate_snapshot_url(value: str) -> urllib.parse.SplitResult:
         or parsed.password is not None
         or parsed.query
         or parsed.fragment
-        or not parsed.path.startswith("/")
+        or (parsed.path and not parsed.path.startswith("/"))
         or (port is not None and not 1 <= port <= 65_535)
     ):
         raise ActivityCardError("SUB2API_SNAPSHOT_URL is missing or invalid")
@@ -193,6 +193,9 @@ def build_snapshot_url(snapshot_url: str, *, as_of: date | None = None) -> str:
     """Build the fixed, privacy-minimal rolling-window dashboard query."""
 
     parsed = _validate_snapshot_url(snapshot_url)
+    path = parsed.path
+    if path in ("", "/"):
+        path = "/api/v1/admin/dashboard/snapshot-v2"
     reference_day = as_of or datetime.now(UTC).date()
     if isinstance(reference_day, datetime) or not isinstance(reference_day, date):
         raise ActivityCardError("snapshot date is invalid")
@@ -211,7 +214,7 @@ def build_snapshot_url(snapshot_url: str, *, as_of: date | None = None) -> str:
             ("include_users_trend", "false"),
         )
     )
-    return urllib.parse.urlunsplit(parsed._replace(query=query))
+    return urllib.parse.urlunsplit(parsed._replace(path=path, query=query))
 
 
 def _validate_api_key(value: str | None) -> str:

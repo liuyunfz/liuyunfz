@@ -1,6 +1,13 @@
 name: Refresh anonymized profile cards
 
 on:
+  push:
+    branches:
+      - master
+    paths:
+      - .github/workflows/homelab-status.yml
+      - scripts/**
+      - tests/**
   schedule:
     # Homelab: twice an hour, away from the busy start of the hour.
     - cron: "17,47 * * * *"
@@ -99,6 +106,9 @@ jobs:
                 exit 1
                 ;;
             esac
+          elif [[ "$EVENT_NAME" == "push" ]]; then
+            refresh_homelab=true
+            refresh_sub2api=true
           else
             echo "::error::Unsupported workflow event."
             exit 1
