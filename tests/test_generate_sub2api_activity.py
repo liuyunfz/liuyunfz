@@ -276,7 +276,6 @@ class ActivityCardTests(unittest.TestCase):
                     timeout_seconds=9,
                     opener=opener,
                     as_of=FIXED_NOW.date(),
-                    waf_bypass_token="fixture-waf-token",
                 )
 
                 self.assertEqual(payload["code"], 0)
@@ -285,12 +284,9 @@ class ActivityCardTests(unittest.TestCase):
                 self.assertIsNotNone(request)
                 self.assertEqual(request.get_method(), "GET")
                 self.assertEqual(request.get_header("X-api-key"), "fixture-admin-key")
+                self.assertIsNone(request.get_header("X-profile-card-token"))
                 self.assertEqual(
-                    request.get_header("X-profile-card-token"),
-                    "fixture-waf-token",
-                )
-                self.assertEqual(
-                    request.get_header("User-agent"), f"{activity_card.USER_AGENT} profile/fixture-waf-token"
+                    request.get_header("User-agent"), "sub2api-activity-card/1.0 profile"
                 )
                 parsed_url = urllib.parse.urlsplit(request.full_url)
                 self.assertEqual(
@@ -317,17 +313,6 @@ class ActivityCardTests(unittest.TestCase):
             urllib.parse.urlsplit(custom_opener.request.full_url).path,
             "/private/dashboard-snapshot",
         )
-
-        with self.assertRaisesRegex(
-            activity_card.ActivityCardError,
-            "SUB2API_WAF_BYPASS_TOKEN is invalid",
-        ):
-            activity_card.fetch_snapshot(
-                "https://example.invalid",
-                "fixture-admin-key",
-                opener=FailingOpener(),
-                waf_bypass_token="invalid\nheader",
-            )
 
         with self.assertRaises(activity_card.ActivityCardError) as raised:
             activity_card.fetch_snapshot(
