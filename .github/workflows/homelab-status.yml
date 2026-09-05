@@ -1,0 +1,420 @@
+name: Refresh anonymized profile cards
+
+on:
+  schedule:
+    # Homelab: twice an hour, away from the busy start of the hour.
+    - cron: "17,47 * * * *"
+    # AI gateway: once a day. GitHub Actions schedules are expressed in UTC.
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Cards to refresh
+        required: true
+        default: both
+        type: choice
+        options:
+          - both
+          - homelab
+          - sub2api
+
+permissions: {}
+
+concurrency:
+  group: profile-live-cards
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  publish:
+    # A manual run from another ref must not publish with default-branch secrets.
+    if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          persist-credentials: false
+          show-progress: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Test the sanitizers and renderers
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+      - name: Select cards and seed the last successful versions
+        id: plan
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          OUTPUT_DIR: ${{ runner.temp }}/status-card-output
+          REQUESTED_TARGET: ${{ inputs.target }}
+          SCHEDULE_EXPRESSION: ${{ github.event.schedule }}
+        run: |
+          set +x
+          set -euo pipefail
+          umask 077
+
+          install -d -m 0700 "$OUTPUT_DIR"
+
+          refresh_homelab=false
+          refresh_sub2api=false
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            case "$REQUESTED_TARGET" in
+              both)
+                refresh_homelab=true
+                refresh_sub2api=true
+                ;;
+              homelab)
+                refresh_homelab=true
+                ;;
+              sub2api)
+                refresh_sub2api=true
+                ;;
+              *)
+                echo "::error::Unknown manual refresh target."
+                exit 1
+                ;;
+            esac
+          elif [[ "$EVENT_NAME" == "schedule" ]]; then
+            case "$SCHEDULE_EXPRESSION" in
+              "17,47 * * * *") refresh_homelab=true ;;
+              "23 3 * * *") refresh_sub2api=true ;;
+              *)
+                echo "::error::Unknown profile-card schedule."
+                exit 1
+                ;;
+            esac
+          else
+            echo "::error::Unsupported workflow event."
+            exit 1
+          fi
+
+          git_with_token() {
+            git \
+              -c 'credential.helper=!f() { printf "%s\n" "username=x-access-token" "password=$GH_TOKEN"; }; f' \
+              "$@"
+          }
+
+          remote_line="$(
+            git_with_token ls-remote --refs origin refs/heads/status-card
+          )"
+          base_sha=""
+
+          expected_files=(
+            homelab-status-dark.svg
+            homelab-status-light.svg
+            sub2api-activity-dark.svg
+            sub2api-activity-light.svg
+          )
+
+          if [[ -n "$remote_line" ]]; then
+            if [[ ! "$remote_line" =~ ^[0-9a-f]{40}[[:space:]]+refs/heads/status-card$ ]]; then
+              echo "::error::Unexpected remote status-card reference."
+              exit 1
+            fi
+
+            base_sha="${remote_line%%[[:space:]]*}"
+            git_with_token fetch --quiet --no-tags --depth=1 \
+              origin refs/heads/status-card
+
+            fetched_sha="$(git rev-parse --verify 'FETCH_HEAD^{commit}')"
+            if [[ "$fetched_sha" != "$base_sha" ]]; then
+              echo "::error::The status-card branch changed while it was read."
+              exit 1
+            fi
+
+            remote_parent_count="$(
+              git cat-file -p "$fetched_sha" |
+                awk '$1 == "parent" { count++ } END { print count + 0 }'
+            )"
+            if [[ "$remote_parent_count" -ne 0 ]]; then
+              echo "::error::The status-card branch is not a single root commit."
+              exit 1
+            fi
+
+            mapfile -d '' -t remote_paths < <(
+              git ls-tree -r -z --name-only "$fetched_sha"
+            )
+            for remote_path in "${remote_paths[@]}"; do
+              case "$remote_path" in
+                homelab-status-dark.svg|homelab-status-light.svg|sub2api-activity-dark.svg|sub2api-activity-light.svg) ;;
+                *)
+                  echo "::error::The status-card branch contains an unexpected file."
+                  exit 1
+                  ;;
+              esac
+            done
+
+            for expected_file in "${expected_files[@]}"; do
+              if git cat-file -e "$fetched_sha:$expected_file" 2>/dev/null; then
+                git show "$fetched_sha:$expected_file" >"$OUTPUT_DIR/$expected_file"
+              fi
+            done
+          fi
+
+          # Bootstrap a missing pair even when the scheduled/manual target was
+          # the other component, so the public branch is always complete.
+          if [[ ! -f "$OUTPUT_DIR/homelab-status-dark.svg" ||
+                ! -f "$OUTPUT_DIR/homelab-status-light.svg" ]]; then
+            refresh_homelab=true
+          fi
+          if [[ ! -f "$OUTPUT_DIR/sub2api-activity-dark.svg" ||
+                ! -f "$OUTPUT_DIR/sub2api-activity-light.svg" ]]; then
+            refresh_sub2api=true
+          fi
+
+          {
+            echo "base_sha=$base_sha"
+            echo "refresh_homelab=$refresh_homelab"
+            echo "refresh_sub2api=$refresh_sub2api"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Generate homelab cards
+        if: ${{ steps.plan.outputs.refresh_homelab == 'true' }}
+        env:
+          HOMELAB_ALIAS_SALT: ${{ secrets.HOMELAB_ALIAS_SALT }}
+          HOMELAB_WORK_DIR: ${{ runner.temp }}/homelab-card-output
+          KOMARI_BEARER_TOKEN: ${{ secrets.KOMARI_BEARER_TOKEN }}
+          KOMARI_STATUS_URL: ${{ secrets.KOMARI_STATUS_URL }}
+          OUTPUT_DIR: ${{ runner.temp }}/status-card-output
+        run: |
+          set +x
+          set -euo pipefail
+          umask 077
+
+          if [[ -z "${KOMARI_STATUS_URL:-}" || -z "${HOMELAB_ALIAS_SALT:-}" ]]; then
+            echo "::error::Required homelab secrets are not configured."
+            exit 1
+          fi
+
+          install -d -m 0700 "$HOMELAB_WORK_DIR"
+          generator_log="$RUNNER_TEMP/homelab-generator.log"
+          trap ': >"$generator_log"' EXIT
+
+          # Keep unexpected exceptions and upstream responses out of public logs.
+          if ! python scripts/generate_homelab_status.py \
+              --output-dir "$HOMELAB_WORK_DIR" \
+              >"$generator_log" 2>&1; then
+            echo "::error::Homelab generation failed; the published cards were left unchanged."
+            exit 1
+          fi
+
+          shopt -s nullglob dotglob
+          generated_paths=("$HOMELAB_WORK_DIR"/*)
+          if [[ "${#generated_paths[@]}" -ne 2 ||
+                ! -f "$HOMELAB_WORK_DIR/homelab-status-dark.svg" ||
+                -L "$HOMELAB_WORK_DIR/homelab-status-dark.svg" ||
+                ! -f "$HOMELAB_WORK_DIR/homelab-status-light.svg" ||
+                -L "$HOMELAB_WORK_DIR/homelab-status-light.svg" ]]; then
+            echo "::error::Homelab generation produced unexpected files."
+            exit 1
+          fi
+
+          install -m 0600 -- \
+            "$HOMELAB_WORK_DIR/homelab-status-dark.svg" \
+            "$HOMELAB_WORK_DIR/homelab-status-light.svg" \
+            "$OUTPUT_DIR/"
+
+      - name: Generate AI gateway activity cards
+        if: ${{ steps.plan.outputs.refresh_sub2api == 'true' }}
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/status-card-output
+          SUB2API_ADMIN_API_KEY: ${{ secrets.SUB2API_ADMIN_API_KEY }}
+          SUB2API_SNAPSHOT_URL: ${{ secrets.SUB2API_SNAPSHOT_URL }}
+          SUB2API_WORK_DIR: ${{ runner.temp }}/sub2api-card-output
+        run: |
+          set +x
+          set -euo pipefail
+          umask 077
+
+          if [[ -z "${SUB2API_SNAPSHOT_URL:-}" || -z "${SUB2API_ADMIN_API_KEY:-}" ]]; then
+            echo "::error::Required AI gateway secrets are not configured."
+            exit 1
+          fi
+
+          install -d -m 0700 "$SUB2API_WORK_DIR"
+          generator_log="$RUNNER_TEMP/sub2api-generator.log"
+          trap ': >"$generator_log"' EXIT
+
+          # The admin credential is available only to this generator and the
+          # local sanitizer. Neither stdout nor stderr is copied to the branch.
+          if ! python scripts/generate_sub2api_activity.py \
+              --output-dir "$SUB2API_WORK_DIR" \
+              >"$generator_log" 2>&1; then
+            echo "::error::AI gateway generation failed; the published cards were left unchanged."
+            exit 1
+          fi
+
+          shopt -s nullglob dotglob
+          generated_paths=("$SUB2API_WORK_DIR"/*)
+          if [[ "${#generated_paths[@]}" -ne 2 ||
+                ! -f "$SUB2API_WORK_DIR/sub2api-activity-dark.svg" ||
+                -L "$SUB2API_WORK_DIR/sub2api-activity-dark.svg" ||
+                ! -f "$SUB2API_WORK_DIR/sub2api-activity-light.svg" ||
+                -L "$SUB2API_WORK_DIR/sub2api-activity-light.svg" ]]; then
+            echo "::error::AI gateway generation produced unexpected files."
+            exit 1
+          fi
+
+          install -m 0600 -- \
+            "$SUB2API_WORK_DIR/sub2api-activity-dark.svg" \
+            "$SUB2API_WORK_DIR/sub2api-activity-light.svg" \
+            "$OUTPUT_DIR/"
+
+      - name: Validate all publishable output
+        env:
+          HOMELAB_ALIAS_SALT: ${{ secrets.HOMELAB_ALIAS_SALT }}
+          KOMARI_BEARER_TOKEN: ${{ secrets.KOMARI_BEARER_TOKEN }}
+          KOMARI_STATUS_URL: ${{ secrets.KOMARI_STATUS_URL }}
+          OUTPUT_DIR: ${{ runner.temp }}/status-card-output
+          SUB2API_ADMIN_API_KEY: ${{ secrets.SUB2API_ADMIN_API_KEY }}
+          SUB2API_SNAPSHOT_URL: ${{ secrets.SUB2API_SNAPSHOT_URL }}
+        run: |
+          set +x
+          set -euo pipefail
+          umask 077
+
+          validator_log="$RUNNER_TEMP/status-card-validator.log"
+          trap ': >"$validator_log"' EXIT
+          if ! python scripts/validate_homelab_status.py "$OUTPUT_DIR" \
+              >"$validator_log" 2>&1; then
+            echo "::error::Profile-card validation failed; the published cards were left unchanged."
+            exit 1
+          fi
+
+      - name: Publish the one-commit status-card branch
+        env:
+          EXPECTED_REMOTE_SHA: ${{ steps.plan.outputs.base_sha }}
+          GH_TOKEN: ${{ github.token }}
+          OUTPUT_DIR: ${{ runner.temp }}/status-card-output
+          PUBLISH_DIR: ${{ runner.temp }}/status-card-publish
+        run: |
+          set +x
+          set -euo pipefail
+          umask 077
+
+          install -d -m 0700 "$PUBLISH_DIR"
+          install -m 0644 -- \
+            "$OUTPUT_DIR/homelab-status-dark.svg" \
+            "$OUTPUT_DIR/homelab-status-light.svg" \
+            "$OUTPUT_DIR/sub2api-activity-dark.svg" \
+            "$OUTPUT_DIR/sub2api-activity-light.svg" \
+            "$PUBLISH_DIR/"
+
+          git -C "$PUBLISH_DIR" init --initial-branch=status-card --quiet
+          git -C "$PUBLISH_DIR" config user.name "github-actions[bot]"
+          git -C "$PUBLISH_DIR" config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git -C "$PUBLISH_DIR" add -- \
+            homelab-status-dark.svg \
+            homelab-status-light.svg \
+            sub2api-activity-dark.svg \
+            sub2api-activity-light.svg
+
+          mapfile -t published_paths < <(
+            git -C "$PUBLISH_DIR" ls-files | LC_ALL=C sort
+          )
+          if [[ "${#published_paths[@]}" -ne 4 ||
+                "${published_paths[0]}" != "homelab-status-dark.svg" ||
+                "${published_paths[1]}" != "homelab-status-light.svg" ||
+                "${published_paths[2]}" != "sub2api-activity-dark.svg" ||
+                "${published_paths[3]}" != "sub2api-activity-light.svg" ]]; then
+            echo "::error::Refusing to publish unexpected files."
+            exit 1
+          fi
+
+          # A fresh root commit keeps this generated branch at one reachable commit.
+          git -C "$PUBLISH_DIR" commit --quiet \
+            -m "chore: refresh anonymized profile cards"
+          local_parent_count="$(
+            git -C "$PUBLISH_DIR" cat-file -p HEAD |
+              awk '$1 == "parent" { count++ } END { print count + 0 }'
+          )"
+          if [[ "$local_parent_count" -ne 0 ]]; then
+            echo "::error::Refusing to publish a non-root commit."
+            exit 1
+          fi
+
+          git -C "$PUBLISH_DIR" remote add origin \
+            "https://github.com/${GITHUB_REPOSITORY}.git"
+
+          git_with_token() {
+            git \
+              -c 'credential.helper=!f() { printf "%s\n" "username=x-access-token" "password=$GH_TOKEN"; }; f' \
+              "$@"
+          }
+
+          remote_line="$(
+            git_with_token -C "$PUBLISH_DIR" \
+              ls-remote --refs origin refs/heads/status-card
+          )"
+          current_remote_sha=""
+
+          if [[ -n "$remote_line" ]]; then
+            if [[ ! "$remote_line" =~ ^[0-9a-f]{40}[[:space:]]+refs/heads/status-card$ ]]; then
+              echo "::error::Unexpected remote status-card reference."
+              exit 1
+            fi
+            current_remote_sha="${remote_line%%[[:space:]]*}"
+          fi
+
+          # Do not overwrite a refresh (or a human edit) that landed after the
+          # previous cards were seeded at the start of this job.
+          if [[ "$current_remote_sha" != "$EXPECTED_REMOTE_SHA" ]]; then
+            echo "::error::The status-card branch changed during generation; retry later."
+            exit 1
+          fi
+
+          if [[ -n "$EXPECTED_REMOTE_SHA" ]]; then
+            git_with_token -C "$PUBLISH_DIR" fetch --quiet --no-tags --depth=1 \
+              origin refs/heads/status-card
+
+            fetched_sha="$(
+              git -C "$PUBLISH_DIR" rev-parse --verify 'FETCH_HEAD^{commit}'
+            )"
+            if [[ "$fetched_sha" != "$EXPECTED_REMOTE_SHA" ]]; then
+              echo "::error::The fetched status-card commit was unexpected."
+              exit 1
+            fi
+
+            remote_parent_count="$(
+              git -C "$PUBLISH_DIR" cat-file -p "$fetched_sha" |
+                awk '$1 == "parent" { count++ } END { print count + 0 }'
+            )"
+            if [[ "$remote_parent_count" -ne 0 ]]; then
+              echo "::error::The remote status-card branch is not a root commit."
+              exit 1
+            fi
+
+            local_tree="$(
+              git -C "$PUBLISH_DIR" rev-parse --verify 'HEAD^{tree}'
+            )"
+            remote_tree="$(
+              git -C "$PUBLISH_DIR" rev-parse --verify 'FETCH_HEAD^{tree}'
+            )"
+            if [[ "$local_tree" == "$remote_tree" ]]; then
+              echo "Profile cards are unchanged; nothing to publish."
+              exit 0
+            fi
+          fi
+
+          # An empty expected SHA means "create only if the branch is absent".
+          git_with_token -C "$PUBLISH_DIR" push --porcelain \
+            "--force-with-lease=refs/heads/status-card:${EXPECTED_REMOTE_SHA}" \
+            origin HEAD:refs/heads/status-card
