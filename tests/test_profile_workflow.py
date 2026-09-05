@@ -30,7 +30,7 @@ class ProfileWorkflowTests(unittest.TestCase):
         self.assertIn('"23 3 * * *") refresh_sub2api=true', self.text)
         self.assertRegex(
             self.text,
-            r'(?s)\[\[ "\$EVENT_NAME" == "push" \]\].*?refresh_homelab=true.*?else',
+            r'(?s)\[\[ "\$EVENT_NAME" == "push" \]\].*?refresh_homelab=true\s+refresh_sub2api=true\s+else',
         )
 
     def test_generates_and_publishes_exactly_four_named_cards(self) -> None:

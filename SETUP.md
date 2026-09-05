@@ -46,8 +46,8 @@ the independent administrator key in `x-api-key`. The legacy
 `x-profile-card-token` header is also sent for compatibility.
 
 After configuring the exception, run **Refresh privacy-bounded profile cards**
-with target `sub2api` or `both`. Push events refresh Homelab only; Sub2API also has
-its daily schedule. A failed generation leaves the previous published cards
+with target `sub2api` or `both`. Matching code push events refresh both cards;
+Sub2API also has its daily schedule. A failed generation leaves the previous published cards
 unchanged. Rotate any administrator key previously shared in a conversation.
 
 ## Homelab privacy
