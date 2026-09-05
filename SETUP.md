@@ -16,17 +16,20 @@ by Sub2API; deleted history cannot be recovered by the card.
 
 ## ESA WAF rule
 
-The request uses a fixed public User-Agent, without a WAF token:
+Set the Actions secret `SUB2API_WAF_BYPASS_TOKEN` to a separate random value
+(recommended: 32 random bytes encoded as 64 hexadecimal characters). Do not
+reuse the administrator API key. Valid values use 32-256 ASCII letters, digits,
+underscores or hyphens. The request uses this exact User-Agent:
 
 ```text
-sub2api-activity-card/1.0 profile
+sub2api-activity-card/1.0 profile/<SUB2API_WAF_BYPASS_TOKEN>
 ```
 
 In ESA, match all available conditions together:
 
 - Hostname equals the Sub2API hostname.
 - URI path equals `/api/v1/admin/dashboard/snapshot-v2`.
-- User Agent equals the string above, or matches the existing prefix rule.
+- User Agent equals the full string above, with the actual token substituted.
 - HTTP method equals `GET`, if supported by the rule editor.
 
 If the editor only offers the full URI rather than URI path, the request includes
@@ -36,16 +39,28 @@ Skip only the rule or protection that causes the rejection, where ESA allows
 that scope. Put the exception before the rejecting rule and verify its event
 log. Do not disable the entire WAF or broadly allow overseas traffic.
 
-User-Agent is public and spoofable. Anyone can copy it to match this WAF
-exception; it is not authentication or a secret. Sub2API still checks the
-administrator key in `x-api-key`. No `x-profile-card-token` header is sent and
-`SUB2API_WAF_BYPASS_TOKEN` is no longer read. An existing secret with that name
-can be removed from GitHub, but leaving it set does not affect these requests.
+For rollout only, an unset secret retains `sub2api-activity-card/1.0 profile`.
+Configure the secret before tightening ESA. Remove the old prefix-only
+exception, otherwise it also allows requests without the secret. User-Agent
+can be copied and can appear in access logs; the suffix is a WAF marker, not
+an authentication replacement. Sub2API still checks the independent
+administrator key in `x-api-key`. No legacy custom token header is sent.
 
 After configuring the exception, run **Refresh privacy-bounded profile cards**
 with target `sub2api` or `both`. Matching code push events refresh both cards;
 Sub2API also has its daily schedule. A failed generation leaves the previous published cards
 unchanged. Rotate any administrator key previously shared in a conversation.
+
+## Refresh frequency
+
+- Homelab: minute 17 and 47 of every hour (48 scheduled attempts per day).
+- Sub2API: 03:23 UTC daily (11:23 Asia/Shanghai).
+- Both: manual `both` runs and matching generator/workflow code pushes.
+
+These are scheduled attempts, not an availability guarantee: GitHub can delay
+or drop scheduled jobs under load, and inactive public repositories can have
+schedules disabled after 60 days. Check Actions when the image timestamp is
+stale; the last successful image is retained on fetch failure.
 
 ## Homelab privacy
 

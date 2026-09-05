@@ -243,6 +243,23 @@ def _validate_timeout(value: float) -> float:
     return float(value)
 
 
+def build_user_agent(waf_bypass_token: str | None = None) -> str:
+    """Use an optional secret suffix while existing ESA rules are migrated."""
+
+    if waf_bypass_token in (None, ""):
+        return USER_AGENT
+    if (
+        not isinstance(waf_bypass_token, str)
+        or not 32 <= len(waf_bypass_token) <= 256
+        or any(
+            not (c.isascii() and (c.isalnum() or c in "_-"))
+            for c in waf_bypass_token
+        )
+    ):
+        raise ActivityCardError("SUB2API_WAF_BYPASS_TOKEN is invalid")
+    return f"{USER_AGENT}/{waf_bypass_token}"
+
+
 def _read_safe_http_error_code(error: urllib.error.HTTPError) -> str | None:
     """Read only a bounded, allowlisted error code for safe diagnostics."""
 
@@ -292,6 +309,7 @@ def fetch_snapshot(
     opener: Any | None = None,
     *,
     as_of: date | None = None,
+    waf_bypass_token: str | None = None,
 ) -> Mapping[str, Any]:
     """Fetch one bounded snapshot-v2 response without exposing credentials."""
 
@@ -301,7 +319,7 @@ def fetch_snapshot(
     headers = {
         "Accept": "application/json",
         "Accept-Encoding": "identity",
-        "User-Agent": USER_AGENT,
+        "User-Agent": build_user_agent(waf_bypass_token),
         "x-api-key": key,
     }
     request = urllib.request.Request(
@@ -774,6 +792,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 os.environ.get("SUB2API_SNAPSHOT_URL", ""),
                 os.environ.get("SUB2API_ADMIN_API_KEY"),
                 timeout_seconds=args.timeout_seconds,
+                waf_bypass_token=os.environ.get("SUB2API_WAF_BYPASS_TOKEN"),
             )
         snapshot = generate_cards_from_payload(payload, args.output_dir)
     except ActivityCardError as error:
