@@ -104,6 +104,7 @@ def _forbidden_literals() -> tuple[bytes, ...]:
         os.environ.get("SUB2API_SNAPSHOT_URL", ""),
         urlsplit(os.environ.get("SUB2API_SNAPSHOT_URL", "")).hostname or "",
         os.environ.get("SUB2API_ADMIN_API_KEY", ""),
+        os.environ.get("SUB2API_WAF_BYPASS_TOKEN", ""),
     )
     encoded_values = (value.encode("utf-8") for value in values if value)
     return tuple(value for value in encoded_values if len(value) >= 8)

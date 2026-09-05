@@ -108,7 +108,6 @@ jobs:
             esac
           elif [[ "$EVENT_NAME" == "push" ]]; then
             refresh_homelab=true
-            refresh_sub2api=true
           else
             echo "::error::Unsupported workflow event."
             exit 1
@@ -277,6 +276,7 @@ jobs:
           OUTPUT_DIR: ${{ runner.temp }}/status-card-output
           SUB2API_ADMIN_API_KEY: ${{ secrets.SUB2API_ADMIN_API_KEY }}
           SUB2API_SNAPSHOT_URL: ${{ secrets.SUB2API_SNAPSHOT_URL }}
+          SUB2API_WAF_BYPASS_TOKEN: ${{ secrets.SUB2API_WAF_BYPASS_TOKEN }}
           SUB2API_WORK_DIR: ${{ runner.temp }}/sub2api-card-output
         run: |
           set +x
@@ -382,6 +382,7 @@ jobs:
           OUTPUT_DIR: ${{ runner.temp }}/status-card-output
           SUB2API_ADMIN_API_KEY: ${{ secrets.SUB2API_ADMIN_API_KEY }}
           SUB2API_SNAPSHOT_URL: ${{ secrets.SUB2API_SNAPSHOT_URL }}
+          SUB2API_WAF_BYPASS_TOKEN: ${{ secrets.SUB2API_WAF_BYPASS_TOKEN }}
         run: |
           set +x
           set -euo pipefail

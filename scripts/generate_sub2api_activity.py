@@ -26,6 +26,7 @@ from typing import Any, Mapping, Sequence
 
 
 USER_AGENT = "sub2api-activity-card/1.0"
+WAF_BYPASS_HEADER = "x-profile-card-token"
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_ERROR_RESPONSE_BYTES = 16 * 1024
 MAX_RAW_POINTS = 1_000
@@ -230,6 +231,14 @@ def _validate_api_key(value: str | None) -> str:
     return value
 
 
+def _validate_optional_header_token(value: str | None) -> str | None:
+    if value is None or value == "":
+        return None
+    if len(value) > 4_096 or "\r" in value or "\n" in value:
+        raise ActivityCardError("SUB2API_WAF_BYPASS_TOKEN is invalid")
+    return value
+
+
 def _validate_timeout(value: float) -> float:
     if (
         isinstance(value, bool)
@@ -291,20 +300,25 @@ def fetch_snapshot(
     opener: Any | None = None,
     *,
     as_of: date | None = None,
+    waf_bypass_token: str | None = None,
 ) -> Mapping[str, Any]:
     """Fetch one bounded snapshot-v2 response without exposing credentials."""
 
     url = build_snapshot_url(snapshot_url, as_of=as_of)
     key = _validate_api_key(api_key)
+    bypass_token = _validate_optional_header_token(waf_bypass_token)
     timeout = _validate_timeout(timeout_seconds)
+    headers = {
+        "Accept": "application/json",
+        "Accept-Encoding": "identity",
+        "User-Agent": USER_AGENT,
+        "x-api-key": key,
+    }
+    if bypass_token is not None:
+        headers[WAF_BYPASS_HEADER] = bypass_token
     request = urllib.request.Request(
         url,
-        headers={
-            "Accept": "application/json",
-            "Accept-Encoding": "identity",
-            "User-Agent": USER_AGENT,
-            "x-api-key": key,
-        },
+        headers=headers,
         method="GET",
     )
     client = opener or urllib.request.build_opener(_NoRedirectHandler())
@@ -778,6 +792,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 os.environ.get("SUB2API_SNAPSHOT_URL", ""),
                 os.environ.get("SUB2API_ADMIN_API_KEY"),
                 timeout_seconds=args.timeout_seconds,
+                waf_bypass_token=os.environ.get("SUB2API_WAF_BYPASS_TOKEN"),
             )
         snapshot = generate_cards_from_payload(payload, args.output_dir)
     except ActivityCardError as error:
