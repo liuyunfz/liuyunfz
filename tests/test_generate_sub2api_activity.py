@@ -91,6 +91,35 @@ class HTTPErrorOpener:
 
 
 class ActivityCardTests(unittest.TestCase):
+    def setUp(self) -> None:
+        patcher = mock.patch.dict(os.environ, {"SUB2API_USER_ID": "42"})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_user_scope_is_required_before_network_request(self) -> None:
+        for value in ("", "0", "-1", "all", "42&user_id=0", "9" * 40):
+            with mock.patch.dict(os.environ, {"SUB2API_USER_ID": value}):
+                opener = mock.Mock()
+                with self.assertRaisesRegex(activity_card.ActivityCardError, "SUB2API_USER_ID is missing or invalid"):
+                    activity_card.fetch_snapshot("https://example.invalid", "fixture-key", opener=opener)
+                opener.open.assert_not_called()
+
+    def test_query_uses_shanghai_calendar_at_utc_day_boundary(self) -> None:
+        with mock.patch.object(activity_card, "_utc_now", return_value=datetime(2026, 9, 5, 17, tzinfo=UTC)):
+            query = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(activity_card.build_snapshot_url("https://example.invalid")).query))
+        self.assertEqual(query["end_date"], "2026-09-05")
+        self.assertEqual(query["timezone"], "Asia/Shanghai")
+        self.assertEqual(query["user_id"], "42")
+
+    def test_render_uses_same_local_day_boundary(self) -> None:
+        snapshot = activity_card.parse_snapshot(load_fixture("sub2api_valid.json"))
+        svg = activity_card.render_svg(snapshot, "light", generated_at=datetime(2026, 9, 5, 17, tzinfo=UTC))
+        self.assertIn("Updated 2026-09-06 01:00 UTC+8", svg)
+        self.assertIn("Aug 30 - Sep 05", svg)
+        self.assertIn("PERSONAL · UTC+8 DAYS", svg)
+        self.assertNotIn("user_id", svg)
+        self.assertNotIn("gmail", svg)
+
     def test_optional_secret_user_agent_suffix(self) -> None:
         token = "fixture-only-" + "a" * 52
         opener = RecordingOpener(FakeResponse(json.dumps(load_fixture("sub2api_valid.json")).encode()))
@@ -138,7 +167,7 @@ class ActivityCardTests(unittest.TestCase):
         self.assertIn("powered by Sub2API", svg)
         self.assertEqual(svg.count("<polyline "), 4)
         self.assertEqual(svg.count("<polygon "), 4)
-        self.assertIn("Updated 2026-09-05 02:05 UTC", svg)
+        self.assertIn("Updated 2026-09-05 10:05 UTC+8", svg)
         for forbidden in (
             "PRIVATE-MODEL-SHOULD-NOT-LEAK",
             "PRIVATE-GROUP-SHOULD-NOT-LEAK",
@@ -317,6 +346,8 @@ class ActivityCardTests(unittest.TestCase):
                 self.assertEqual(query["start_date"], "2026-06-07")
                 self.assertEqual(query["end_date"], "2026-09-04")
                 self.assertEqual(query["granularity"], "day")
+                self.assertEqual(query["timezone"], "Asia/Shanghai")
+                self.assertEqual(query["user_id"], "42")
                 self.assertEqual(query["include_stats"], "false")
                 self.assertEqual(query["include_trend"], "true")
                 self.assertEqual(query["include_model_stats"], "false")

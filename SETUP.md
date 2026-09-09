@@ -7,12 +7,23 @@ SVG files in a single-root-commit branch, with no raw response or JSON artifact.
 
 ## Data windows
 
-The Sub2API collector requests 90 completed UTC days, excluding today. Each
+Both cards display update timestamps in UTC+8. The Sub2API collector requests
+90 completed Asia/Shanghai (UTC+8) calendar days, excluding today, with the
+explicit `timezone=Asia/Shanghai` query parameter. Each
 window's totals are derived from daily trend rows, not the dashboard's lifetime
 stats. Missing dates are treated as no recorded usage. 7D and 30D show daily
 values; 90D shows consecutive weekly daily averages (the final bin has six days).
 Each chart has an independent vertical scale. Values only cover data retained
 by Sub2API; deleted history cannot be recovered by the card.
+
+Set the Actions secret `SUB2API_USER_ID` to the positive numeric ID of the one
+user whose activity you own (from Sub2API user management, not an upstream
+account ID). Every live snapshot request must include this `user_id` filter.
+Missing or invalid IDs stop generation before any network request; there is no
+fallback to site-wide statistics. The email and ID are not rendered into cards.
+Keep `include_stats=false`: the dashboard lifetime stats are site-wide even
+when a user filter is present. Cards show requests and tokens, not balance or
+remaining monetary credit. Re-run both cards after setting the secret.
 
 ## ESA WAF rule
 

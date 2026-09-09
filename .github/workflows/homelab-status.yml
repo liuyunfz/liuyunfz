@@ -280,6 +280,7 @@ jobs:
           SUB2API_SNAPSHOT_URL: ${{ secrets.SUB2API_SNAPSHOT_URL }}
           SUB2API_WAF_BYPASS_TOKEN: ${{ secrets.SUB2API_WAF_BYPASS_TOKEN }}
           SUB2API_WORK_DIR: ${{ runner.temp }}/sub2api-card-output
+          SUB2API_USER_ID: ${{ secrets.SUB2API_USER_ID }}
         run: |
           set +x
           set -euo pipefail
@@ -316,7 +317,7 @@ jobs:
               raise SystemExit(1) from None
           PY
           then
-            echo "::error::SUB2API_SNAPSHOT_URL must be an HTTPS root URL or endpoint without credentials, query parameters, or a fragment."
+            echo "::error::Check SUB2API_SNAPSHOT_URL (HTTPS root or endpoint without query) and SUB2API_USER_ID (required positive numeric user ID). No values were logged."
             exit 1
           fi
 

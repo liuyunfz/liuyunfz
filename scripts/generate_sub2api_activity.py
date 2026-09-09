@@ -19,13 +19,14 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 
 USER_AGENT = "sub2api-activity-card/1.0 profile"
+DISPLAY_TIMEZONE = timezone(timedelta(hours=8))
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_ERROR_RESPONSE_BYTES = 16 * 1024
 MAX_RAW_POINTS = 1_000
@@ -198,7 +199,10 @@ def build_snapshot_url(snapshot_url: str, *, as_of: date | None = None) -> str:
     path = parsed.path
     if path in ("", "/"):
         path = "/api/v1/admin/dashboard/snapshot-v2"
-    reference_day = as_of or datetime.now(UTC).date()
+    user_id = os.environ.get("SUB2API_USER_ID", "")
+    if not 1 <= len(user_id) <= 19 or not user_id.isascii() or not user_id.isdecimal() or not 0 < int(user_id) < 2**63:
+        raise ActivityCardError("SUB2API_USER_ID is missing or invalid")
+    reference_day = as_of or _utc_now().astimezone(DISPLAY_TIMEZONE).date()
     if isinstance(reference_day, datetime) or not isinstance(reference_day, date):
         raise ActivityCardError("snapshot date is invalid")
 
@@ -209,6 +213,8 @@ def build_snapshot_url(snapshot_url: str, *, as_of: date | None = None) -> str:
             ("start_date", start_day.isoformat()),
             ("end_date", end_day.isoformat()),
             ("granularity", "day"),
+            ("timezone", "Asia/Shanghai"),
+            ("user_id", user_id),
             ("include_stats", "false"),
             ("include_trend", "true"),
             ("include_model_stats", "false"),
@@ -581,7 +587,7 @@ def _utc_now() -> datetime:
 
 
 def window_series(snapshot: ActivitySnapshot, as_of: date, days: int) -> tuple[list[int], list[int]]:
-    """Use completed UTC days; missing daily rows represent no recorded usage."""
+    """Use completed UTC+8 days; missing daily rows represent no recorded usage."""
 
     if days not in DISPLAY_WINDOWS:
         raise ActivityCardError("activity window is invalid")
@@ -611,8 +617,8 @@ def render_svg(
     rendered_at = generated_at or _utc_now()
     if rendered_at.tzinfo is None:
         raise ActivityCardError("could not render activity card")
-    rendered_at = rendered_at.astimezone(UTC)
-    updated_label = rendered_at.strftime("%Y-%m-%d %H:%M UTC")
+    rendered_at = rendered_at.astimezone(DISPLAY_TIMEZONE)
+    updated_label = rendered_at.strftime("%Y-%m-%d %H:%M UTC+8")
     theme = THEMES[theme_name]
 
     lines = [
@@ -625,7 +631,7 @@ def render_svg(
         '<title id="activity-title">Self-hosted AI Gateway Activity</title>',
         (
             '<desc id="activity-description">'
-            'Requests and tokens over the last 7, 30, and 90 completed UTC days. '
+            'Personal requests and tokens over the last 7, 30, and 90 completed UTC+8 days. '
             f'Each chart is independently scaled. Updated {updated_label}.'
             '</desc>'
         ),
@@ -648,7 +654,7 @@ def render_svg(
             f'<text class="title" x="24" y="31" fill="{theme.text}">'
             'Self-hosted AI Gateway</text>'
         ),
-        f'<text class="footer" x="654" y="30" text-anchor="end" fill="{theme.muted}">COMPLETED UTC DAYS</text>',
+        f'<text class="footer" x="654" y="30" text-anchor="end" fill="{theme.muted}">PERSONAL · UTC+8 DAYS</text>',
         f'<line x1="24" y1="45" x2="654" y2="45" stroke="{theme.grid}"/>',
     ]
     for index, days in enumerate(DISPLAY_WINDOWS):
@@ -785,6 +791,7 @@ def _build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
+        generated_at = _utc_now()
         if args.input_json is not None:
             payload = load_snapshot_file(args.input_json)
         else:
@@ -793,8 +800,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 os.environ.get("SUB2API_ADMIN_API_KEY"),
                 timeout_seconds=args.timeout_seconds,
                 waf_bypass_token=os.environ.get("SUB2API_WAF_BYPASS_TOKEN"),
+                as_of=generated_at.astimezone(DISPLAY_TIMEZONE).date(),
             )
-        snapshot = generate_cards_from_payload(payload, args.output_dir)
+        snapshot = generate_cards_from_payload(payload, args.output_dir, generated_at=generated_at)
     except ActivityCardError as error:
         print(f"activity-card: {error}", file=sys.stderr)
         return 1

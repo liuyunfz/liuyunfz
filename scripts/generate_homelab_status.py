@@ -26,7 +26,7 @@ import uuid
 import unicodedata
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -555,8 +555,8 @@ def render_svg(
     rendered_at = generated_at or _utc_now()
     if rendered_at.tzinfo is None:
         raise StatusCardError("could not render status card")
-    rendered_at = rendered_at.astimezone(UTC)
-    updated_label = rendered_at.strftime("%Y-%m-%d %H:%M UTC")
+    rendered_at = rendered_at.astimezone(timezone(timedelta(hours=8)))
+    updated_label = rendered_at.strftime("%Y-%m-%d %H:%M UTC+8")
     theme = THEMES[theme_name]
     width = 680
     row_height = 44

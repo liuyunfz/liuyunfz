@@ -97,8 +97,9 @@ class ProfileWorkflowTests(unittest.TestCase):
             "KOMARI_STATUS_URL must be an HTTPS root URL or endpoint", self.text
         )
         self.assertIn(
-            "SUB2API_SNAPSHOT_URL must be an HTTPS root URL or endpoint", self.text
+            "Check SUB2API_SNAPSHOT_URL (HTTPS root or endpoint without query)", self.text
         )
+        self.assertIn("SUB2API_USER_ID: ${{ secrets.SUB2API_USER_ID }}", self.text)
         self.assertIn(
             "SUB2API_ADMIN_API_KEY does not match the generated administrator-key format",
             self.text,

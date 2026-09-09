@@ -102,7 +102,7 @@ class StatusCardTests(unittest.TestCase):
         self.assertIn("Homelab · Live Status", svg)
         self.assertIn("configured names", svg)
         self.assertIn('width="680"', svg)
-        self.assertIn("Updated 2026-09-05 02:05 UTC", svg)
+        self.assertIn("Updated 2026-09-05 10:05 UTC+8", svg)
 
     def test_aliases_match_hmac_base32_and_are_deterministic(self) -> None:
         node_id = "55555555-5555-4555-8555-555555555555"
