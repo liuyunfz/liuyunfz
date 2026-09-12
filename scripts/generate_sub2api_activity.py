@@ -12,7 +12,10 @@ import argparse
 import json
 import math
 import os
+import socket
+import ssl
 import sys
+import time
 import tempfile
 import urllib.error
 import urllib.parse
@@ -50,6 +53,25 @@ TOKEN_FIELDS = (
 
 class ActivityCardError(RuntimeError):
     """A safe-to-display activity-card generation error."""
+
+
+class FetchError(ActivityCardError):
+    def __init__(self, message: str, category: str, *, retryable: bool = False, status: int = 0):
+        super().__init__(message)
+        self.category = category
+        self.retryable = retryable
+        self.status = status
+
+
+def _network_error(error: BaseException) -> FetchError:
+    reason = error.reason if isinstance(error, urllib.error.URLError) else error
+    if isinstance(reason, ssl.SSLError):
+        return FetchError("snapshot fetch failed", "tls")
+    if isinstance(reason, TimeoutError):
+        return FetchError("snapshot fetch failed", "timeout", retryable=True)
+    if isinstance(reason, socket.gaierror):
+        return FetchError("snapshot fetch failed", "dns", retryable=True)
+    return FetchError("snapshot fetch failed", "network", retryable=True)
 
 
 @dataclass(frozen=True)
@@ -279,7 +301,7 @@ def _read_safe_http_error_code(error: urllib.error.HTTPError) -> str | None:
     if not isinstance(payload, dict):
         return None
     code = payload.get("code")
-    if code in {
+    if isinstance(code, str) and code in {
         "ADMIN_COMPLIANCE_ACK_REQUIRED",
         "FORBIDDEN",
         "INVALID_ADMIN_KEY",
@@ -308,7 +330,7 @@ def _safe_http_error_message(error: urllib.error.HTTPError) -> str:
     return "snapshot fetch failed"
 
 
-def fetch_snapshot(
+def _fetch_snapshot_once(
     snapshot_url: str,
     api_key: str | None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
@@ -341,9 +363,9 @@ def fetch_snapshot(
             if status is None:
                 status = response.getcode()
             if status != 200:
-                raise ActivityCardError("snapshot endpoint returned an invalid response")
+                raise FetchError("snapshot endpoint returned an invalid response", "http")
             if response.headers.get_content_type() != "application/json":
-                raise ActivityCardError("snapshot endpoint returned an invalid response")
+                raise FetchError("snapshot endpoint returned an invalid response", "content_type")
 
             content_length = response.headers.get("Content-Length")
             if content_length is not None:
@@ -360,13 +382,55 @@ def fetch_snapshot(
     except ActivityCardError:
         raise
     except urllib.error.HTTPError as error:
-        raise ActivityCardError(_safe_http_error_message(error)) from None
-    except (urllib.error.URLError, TimeoutError, OSError):
-        raise ActivityCardError("snapshot fetch failed") from None
+        message = _safe_http_error_message(error)
+        error.close()
+        raise FetchError(message, "http", status=error.code,
+                         retryable=error.code in {408, 429, 500, 502, 503, 504}
+                         and message in {"snapshot fetch failed", "snapshot request was rate limited"}) from None
+    except (urllib.error.URLError, TimeoutError, OSError) as error:
+        raise _network_error(error) from None
     except Exception:
-        raise ActivityCardError("snapshot fetch failed") from None
+        raise FetchError("snapshot fetch failed", "internal") from None
 
-    return _decode_json(raw)
+    try:
+        return _decode_json(raw)
+    except ActivityCardError as error:
+        category = "response_size" if len(raw) > MAX_RESPONSE_BYTES else "json"
+        raise FetchError(str(error), category) from None
+
+
+def fetch_snapshot(
+    snapshot_url: str,
+    api_key: str | None,
+    timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
+    opener: Any | None = None,
+    *,
+    as_of: date | None = None,
+    waf_bypass_token: str | None = None,
+) -> Mapping[str, Any]:
+    """Retry only transient read failures, emitting fixed-category diagnostics."""
+    # Freeze the calendar across retries, including a local-midnight rollover.
+    as_of = as_of or _utc_now().astimezone(DISPLAY_TIMEZONE).date()
+    for attempt in range(1, 4):
+        started = time.monotonic()
+        category, status, retry = "success", 200, False
+        try:
+            return _fetch_snapshot_once(snapshot_url, api_key, timeout_seconds, opener,
+                                        as_of=as_of, waf_bypass_token=waf_bypass_token)
+        except FetchError as error:
+            category, status = error.category, error.status
+            retry = error.retryable and attempt < 3
+            if not retry:
+                raise
+        except ActivityCardError:
+            category, status = "validation", 0
+            raise
+        finally:
+            elapsed = min(999999, max(0, int((time.monotonic() - started) * 1000)))
+            print(f"card-diag source=sub2api attempt={attempt} category={category} "
+                  f"http={status} elapsed_ms={elapsed} retry={int(retry)}", file=sys.stderr)
+        time.sleep(2 ** attempt)
+    raise ActivityCardError("snapshot fetch failed")
 
 
 def _parse_counter(value: Any) -> int:

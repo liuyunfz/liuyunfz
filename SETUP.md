@@ -62,6 +62,24 @@ with target `sub2api` or `both`. Matching code push events refresh both cards;
 Sub2API also has its daily schedule. A failed generation leaves the previous published cards
 unchanged. Rotate any administrator key previously shared in a conversation.
 
+## Safe troubleshooting
+
+The Sub2API step publishes allowlisted `card-diag` lines: attempt number,
+category, HTTP status (0 means unavailable), elapsed milliseconds and whether
+another attempt will follow. Categories distinguish timeout, DNS, TLS, network,
+HTTP, non-JSON content type, JSON decoding, size and validation failures.
+The scheduled workflow uses a 30-second socket timeout and at most 3 attempts
+with 2s/4s backoff for temporary network failures or HTTP 408/429/500/502/503/504.
+The timeout is per socket operation, not a total request deadline; the workflow
+also has its existing 8-minute overall limit. Authentication, WAF denial, TLS,
+invalid data and rendering failures are not retried. No Retry-After header,
+redirect target, raw exception, response body, URL, email, ID, key or UA token
+is printed. Private logs are still cleared and never uploaded as artifacts.
+The run summary shows actual stage outcomes because `continue-on-error` can
+otherwise make a failed generator's step badge look successful. Failure still
+preserves the last published cards. Homelab errors get coarse allowlisted
+categories; the new network retry policy applies only to Sub2API.
+
 ## Refresh frequency
 
 - Homelab: minute 17 and 47 of every hour (48 scheduled attempts per day).

@@ -92,6 +92,9 @@ class HTTPErrorOpener:
 
 class ActivityCardTests(unittest.TestCase):
     def setUp(self) -> None:
+        sleep = mock.patch.object(activity_card.time, "sleep")
+        sleep.start()
+        self.addCleanup(sleep.stop)
         patcher = mock.patch.dict(os.environ, {"SUB2API_USER_ID": "42"})
         patcher.start()
         self.addCleanup(patcher.stop)

@@ -10,6 +10,15 @@ WORKFLOW = ROOT / ".github" / "workflows" / "homelab-status.yml"
 
 
 class ProfileWorkflowTests(unittest.TestCase):
+    def test_safe_diagnostics_and_actual_outcome_summary(self) -> None:
+        self.assertIn('--timeout-seconds 30', self.text)
+        self.assertIn('python scripts/report_card_diagnostics.py "$generator_log" --failed', self.text)
+        self.assertIn('python scripts/report_card_diagnostics.py "$generator_log"\n', self.text)
+        self.assertIn('python scripts/report_card_diagnostics.py "$validator_log" --failed', self.text)
+        self.assertIn('name: Summarize card stage outcomes\n        if: ${{ always() }}', self.text)
+        self.assertIn('steps.publish_cards.outcome', self.text)
+        self.assertIn('GITHUB_STEP_SUMMARY', self.text)
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.text = WORKFLOW.read_text(encoding="utf-8")

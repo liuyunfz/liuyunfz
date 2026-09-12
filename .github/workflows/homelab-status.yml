@@ -250,6 +250,7 @@ jobs:
               --output-dir "$HOMELAB_WORK_DIR" \
               >"$generator_log" 2>&1; then
             echo "::error::Homelab generation failed; the published cards were left unchanged."
+            python scripts/report_card_diagnostics.py "$generator_log" --failed
             exit 1
           fi
 
@@ -328,8 +329,10 @@ jobs:
           # The admin credential is available only to this generator and the
           # local sanitizer. Neither stdout nor stderr is copied to the branch.
           if ! python scripts/generate_sub2api_activity.py \
+              --timeout-seconds 30 \
               --output-dir "$SUB2API_WORK_DIR" \
               >"$generator_log" 2>&1; then
+            python scripts/report_card_diagnostics.py "$generator_log" --failed
             case "$(tail -n 1 "$generator_log" 2>/dev/null || true)" in
               "activity-card: SUB2API_WAF_BYPASS_TOKEN is invalid")
                 echo "::error::SUB2API_WAF_BYPASS_TOKEN must contain 32-256 ASCII letters, digits, underscores or hyphens. Its value was not logged."
@@ -362,6 +365,7 @@ jobs:
             exit 1
           fi
 
+          python scripts/report_card_diagnostics.py "$generator_log"
           shopt -s nullglob dotglob
           generated_paths=("$SUB2API_WORK_DIR"/*)
           if [[ "${#generated_paths[@]}" -ne 2 ||
@@ -399,10 +403,12 @@ jobs:
           if ! python scripts/validate_homelab_status.py "$OUTPUT_DIR" \
               >"$validator_log" 2>&1; then
             echo "::error::Profile-card validation failed; the published cards were left unchanged."
+            python scripts/report_card_diagnostics.py "$validator_log" --failed
             exit 1
           fi
 
       - name: Publish the one-commit status-card branch
+        id: publish_cards
         if: ${{ steps.validate.outcome == 'success' }}
         env:
           EXPECTED_REMOTE_SHA: ${{ steps.plan.outputs.base_sha }}
@@ -530,3 +536,22 @@ jobs:
         run: |
           echo "::error::One or more requested card sources failed; no cards were published."
           exit 1
+
+      - name: Summarize card stage outcomes
+        if: ${{ always() }}
+        env:
+          HOMELAB_OUTCOME: ${{ steps.generate_homelab.outcome }}
+          SUB2API_OUTCOME: ${{ steps.generate_sub2api.outcome }}
+          VALIDATION_OUTCOME: ${{ steps.validate.outcome }}
+          PUBLISH_OUTCOME: ${{ steps.publish_cards.outcome }}
+        run: |
+          python - <<'PY'
+          import os
+          allowed = {"success", "failure", "skipped", "cancelled"}
+          lines = ["### Card generation outcomes", "", "Use these outcomes, not the continue-on-error step badge.", ""]
+          for stage, key in (("Homelab", "HOMELAB_OUTCOME"), ("Sub2API", "SUB2API_OUTCOME"), ("Validation", "VALIDATION_OUTCOME"), ("Publish", "PUBLISH_OUTCOME")):
+              outcome = os.environ.get(key, "")
+              lines.append(f"- {stage}: {outcome if outcome in allowed else 'unknown'}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
+              summary.write("\n".join(lines) + "\n")
+          PY
