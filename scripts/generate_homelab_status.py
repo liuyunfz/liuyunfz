@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate privacy-bounded SVG status cards from Komari's JSON-RPC endpoint.
 
-Only configured display names, online state, and uptime are retained for
+Only configured display names, online state, uptime, CPU count and RAM size are retained for
 rendering. Unsafe or duplicate names fall back to deterministic HMAC aliases;
 node identifiers are never written to disk or logs.
 """
@@ -72,6 +72,8 @@ class _RawNodeState:
     display_order: int
     online: bool
     uptime_seconds: int
+    cpu_cores: int | None = None
+    memory_bytes: int | None = None
 
 
 @dataclass(frozen=True)
@@ -79,6 +81,8 @@ class NodeState:
     display_name: str
     online: bool
     uptime_seconds: int
+    cpu_cores: int | None = None
+    memory_bytes: int | None = None
 
     @property
     def alias(self) -> str:
@@ -419,6 +423,24 @@ def derive_aliases(node_ids: Iterable[str], salt: str) -> dict[str, str]:
     }
 
 
+def _optional_capacity(value: Any, maximum: int) -> int | None:
+    """Missing/invalid optional specs stay unknown, never enter the SVG as text."""
+    return value if type(value) is int and 0 < value <= maximum else None
+
+
+def format_specs(cpu_cores: int | None, memory_bytes: int | None) -> str:
+    cores = _optional_capacity(cpu_cores, 65536)
+    memory = _optional_capacity(memory_bytes, 2**60)
+    cpu_label = f"{cores}C" if cores is not None else "—"
+    if memory is None:
+        memory_label = "—"
+    else:
+        unit, divisor = ("GiB", 2**30) if memory >= 2**30 else ("MiB", 2**20)
+        amount = f"{memory / divisor:.2f}".rstrip("0").rstrip(".")
+        memory_label = f"{amount} {unit}"
+    return f"{cpu_label} / {memory_label}"
+
+
 def parse_node_states(
     payload: Mapping[str, Any],
     salt: str,
@@ -426,7 +448,7 @@ def parse_node_states(
     now: datetime | None = None,
     max_age_seconds: int = DEFAULT_MAX_AGE_SECONDS,
 ) -> list[NodeState]:
-    """Retain visible configured names, online state, and uptime only."""
+    """Retain visible names, state, uptime and numeric CPU/RAM capacities only."""
 
     if isinstance(max_age_seconds, bool) or not isinstance(max_age_seconds, int):
         raise StatusCardError("max age is invalid")
@@ -503,6 +525,8 @@ def parse_node_states(
                 display_order=visible.get(node_id, (None, 0))[1],
                 online=online,
                 uptime_seconds=uptime,
+                cpu_cores=_optional_capacity(catalog[node_id].get("cpu_cores"), 65536) if catalog is not None else None,
+                memory_bytes=_optional_capacity(catalog[node_id].get("mem_total"), 2**60) if catalog is not None else None,
             )
         )
 
@@ -525,6 +549,8 @@ def parse_node_states(
             ),
             online=state.online,
             uptime_seconds=state.uptime_seconds,
+            cpu_cores=state.cpu_cores,
+            memory_bytes=state.memory_bytes,
         )
         for state in raw_states
     ]
@@ -569,6 +595,7 @@ def render_svg(
             if state.online
             else f"{state.alias} offline."
         )
+        + f" CPU / RAM: {format_specs(state.cpu_cores, state.memory_bytes)}."
         for state in states
     )
 
@@ -592,6 +619,7 @@ def render_svg(
             '.title{font-size:20px;font-weight:700}'
             '.subtitle,.label,.footer{font-size:12px}'
             '.state,.uptime{font-size:13px;font-weight:600}.alias{font-weight:600}'
+            '.specs{font-size:12px;font-weight:600}'
             '.label{font-weight:600;letter-spacing:.08em}'
             '</style>'
         ),
@@ -605,7 +633,7 @@ def render_svg(
         ),
         (
             f'<text class="subtitle" x="28" y="58" fill="{theme.muted}">'
-            'configured names · state · uptime</text>'
+            'configured names · CPU / RAM · state · uptime</text>'
         ),
         (
             f'<rect x="516" y="20" width="136" height="32" rx="16" '
@@ -616,6 +644,7 @@ def render_svg(
             f'fill="{theme.text}">{online_count} / {len(states)} online</text>'
         ),
         f'<text class="label" x="36" y="92" fill="{theme.muted}">NODE</text>',
+        f'<text class="label" x="300" y="92" fill="{theme.muted}">CPU / RAM</text>',
         f'<text class="label" x="462" y="92" fill="{theme.muted}">STATE</text>',
         (
             f'<text class="label" x="644" y="92" text-anchor="end" '
@@ -634,7 +663,7 @@ def render_svg(
             13 if unicodedata.east_asian_width(c) in ("W", "F") else 8
             for c in state.display_name
         )
-        name_font_size = min(13, 390 / max(1, name_width) * 13)
+        name_font_size = min(13, 248 / max(1, name_width) * 13)
         lines.extend(
             [
                 (
@@ -647,6 +676,10 @@ def render_svg(
                     f'{html.escape(state.display_name)}</text>'
                 ),
                 f'<circle cx="448" cy="{baseline - 4}" r="5" fill="{state_color}"/>',
+                (
+                    f'<text class="specs" x="300" y="{baseline}" '
+                    f'fill="{theme.text}">{format_specs(state.cpu_cores, state.memory_bytes)}</text>'
+                ),
                 (
                     f'<text class="state" x="462" y="{baseline}" '
                     f'fill="{state_color}">{state_label}</text>'

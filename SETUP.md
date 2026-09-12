@@ -76,7 +76,11 @@ stale; the last successful image is retained on fetch failure.
 ## Homelab privacy
 
 The collector reads Komari's visible directory and latest status in a JSON-RPC
-batch. Only configured names, online state, and uptime reach the image. Hidden
+batch. Only configured names, online state, uptime, CPU core count and total RAM
+reach the image. CPU count and RAM come from the visible node directory's
+`cpu_cores` and `mem_total` fields (RAM is bytes, displayed in GiB or MiB).
+These are OS-reported capacities, not inferred plan sizes or live utilization.
+Missing/invalid specs display `—`; offline nodes retain their known specs. Hidden
 nodes and nodes absent from the directory are omitted. Unsafe, missing or
 duplicate names fall back to aliases derived using `HOMELAB_ALIAS_SALT` (at least
 16 UTF-8 bytes). Names are XML-escaped and sized to fit the name column.

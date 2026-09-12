@@ -78,7 +78,7 @@ class OutputValidationTests(unittest.TestCase):
             path = output / "homelab-status-dark.svg"
             path.write_text(
                 path.read_text(encoding="utf-8").replace(
-                    "configured names · state · uptime",
+                    "configured names · CPU / RAM · state · uptime",
                     "2001:db8::1234",
                     1,
                 ),

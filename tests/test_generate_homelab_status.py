@@ -68,6 +68,41 @@ class FailingOpener:
 
 
 class StatusCardTests(unittest.TestCase):
+    def test_visible_specs_are_allowlisted_and_offline_specs_retained(self) -> None:
+        payload = load_fixture("status_valid.json")
+        payload[status_card.NODE_CATALOG_KEY] = {
+            node_id: {"name": f"server-{index}", "hidden": False,
+                      "cpu_cores": 4, "mem_total": 8 * 2**30,
+                      "cpu_name": "PRIVATE-CPU-MODEL", "mem_used": 987654321}
+            for index, node_id in enumerate(payload["result"])
+        }
+        states = status_card.parse_node_states(payload, TEST_SALT, now=FIXED_NOW)
+        self.assertTrue(any(not state.online for state in states))
+        for state in states:
+            self.assertEqual(state.cpu_cores, 4)
+            self.assertEqual(state.memory_bytes, 8 * 2**30)
+        for theme in ("light", "dark"):
+            svg = status_card.render_svg(states, theme, generated_at=FIXED_NOW)
+            self.assertIn("CPU / RAM", svg)
+            self.assertEqual(svg.count('>4C / 8 GiB</text>'), 2)
+            self.assertNotIn("PRIVATE-CPU-MODEL", svg)
+            self.assertNotIn("987654321", svg)
+            ET.fromstring(svg)
+
+    def test_specs_format_units_unknown_and_invalid_values(self) -> None:
+        self.assertEqual(status_card.format_specs(1, 512 * 2**20), "1C / 512 MiB")
+        self.assertEqual(status_card.format_specs(4, int(7.75 * 2**30)), "4C / 7.75 GiB")
+        self.assertEqual(status_card.format_specs(None, 2**30), "— / 1 GiB")
+        for value in (None, True, 0, -1, 1.5, "4", "<script>", 2**61):
+            self.assertEqual(status_card.format_specs(value, value), "— / —")
+        payload = load_fixture("status_valid.json")
+        payload[status_card.NODE_CATALOG_KEY] = {
+            node_id: {"name": "server", "hidden": False, "cpu_cores": "PRIVATE", "mem_total": True}
+            for node_id in payload["result"]
+        }
+        states = status_card.parse_node_states(payload, TEST_SALT, now=FIXED_NOW)
+        self.assertTrue(all(s.cpu_cores is None and s.memory_bytes is None for s in states))
+
     def test_fixture_is_sanitized_before_rendering(self) -> None:
         payload = load_fixture("status_valid.json")
         states = status_card.parse_node_states(
