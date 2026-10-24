@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="670" viewBox="0 0 680 670" role="img" aria-labelledby="cost-title cost-desc">
+<title id="cost-title">Internet recurring expenses</title>
+<desc id="cost-desc">Monthly estimate CNY 193.98. Annualized estimate CNY 2,327.73. ECB reference rates dated 2026-10-23; fetched via Frankfurter. Estimates exclude bank conversion fees.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.title{font-size:20px;font-weight:700}.total{font-size:30px;font-weight:700}.body{font-size:13px;font-weight:600}.small{font-size:11px}.estimate{font-size:12px;font-weight:400}.label{font-size:10px;font-weight:600}.section{font-size:11px;font-weight:700}</style>
+<rect x="0.5" y="0.5" width="679" height="669" rx="14" fill="#ffffff" stroke="#d0d7de"/>
+<text class="title" x="28" y="35" fill="#1f2328" text-anchor="start">Internet · Recurring Costs</text>
+<text class="small" x="28" y="58" fill="#656d76" text-anchor="start">AI subscriptions · infrastructure · CNY estimates</text>
+<rect x="28" y="80" width="302" height="102" rx="8" fill="#f6f8fa"/>
+<text class="label" x="46" y="104" fill="#656d76" text-anchor="start">MONTHLY EQUIVALENT</text>
+<text class="total" x="46" y="143" fill="#1f2328" text-anchor="start">¥193.98</text>
+<text class="small" x="46" y="166" fill="#656d76" text-anchor="start">CNY · at the displayed reference rates</text>
+<rect x="350" y="80" width="302" height="102" rx="8" fill="#f6f8fa"/>
+<text class="label" x="368" y="104" fill="#656d76" text-anchor="start">ANNUALIZED COST</text>
+<text class="total" x="368" y="143" fill="#1f2328" text-anchor="start">¥2,327.73</text>
+<text class="small" x="368" y="166" fill="#656d76" text-anchor="start">CNY · at the displayed reference rates</text>
+<text class="section" x="28" y="222" fill="#0969da" text-anchor="start">AI SERVICES</text>
+<text class="label" x="36" y="247" fill="#656d76" text-anchor="start">SERVICE / PLAN</text>
+<text class="label" x="492" y="247" fill="#656d76" text-anchor="end">ORIGINAL / CYCLE</text>
+<text class="label" x="644" y="247" fill="#656d76" text-anchor="end">MONTHLY CNY</text>
+<rect x="20" y="264" width="640" height="40" rx="8" fill="#f6f8fa"/>
+<text class="body" x="36" y="290" fill="#1f2328" text-anchor="start">OpenAI · Plus</text>
+<text class="body" x="492" y="290" fill="#1f2328" text-anchor="end">₺499.99 / mo</text>
+<text class="estimate" x="644" y="290" fill="#656d76" text-anchor="end">≈¥67.05</text>
+<rect x="20" y="312" width="640" height="40" rx="8" fill="#f6f8fa"/>
+<text class="body" x="36" y="338" fill="#1f2328" text-anchor="start">OpenAI · Team 01</text>
+<text class="body" x="492" y="338" fill="#1f2328" text-anchor="end">£5.50 / mo</text>
+<text class="estimate" x="644" y="338" fill="#656d76" text-anchor="end">≈¥49.04</text>
+<rect x="20" y="360" width="640" height="40" rx="8" fill="#f6f8fa"/>
+<text class="body" x="36" y="386" fill="#1f2328" text-anchor="start">OpenAI · Team 02</text>
+<text class="body" x="492" y="386" fill="#1f2328" text-anchor="end">£5.50 / mo</text>
+<text class="estimate" x="644" y="386" fill="#656d76" text-anchor="end">≈¥49.04</text>
+<text class="section" x="28" y="432" fill="#0969da" text-anchor="start">INFRASTRUCTURE</text>
+<text class="label" x="36" y="457" fill="#656d76" text-anchor="start">SERVICE / PLAN</text>
+<text class="label" x="492" y="457" fill="#656d76" text-anchor="end">ORIGINAL / CYCLE</text>
+<text class="label" x="644" y="457" fill="#656d76" text-anchor="end">MONTHLY CNY</text>
+<rect x="20" y="474" width="640" height="40" rx="8" fill="#f6f8fa"/>
+<text class="body" x="36" y="500" fill="#1f2328" text-anchor="start">VMISS · US.LA.TRI.Basic</text>
+<text class="body" x="492" y="500" fill="#1f2328" text-anchor="end">C$4.50 / mo</text>
+<text class="estimate" x="644" y="500" fill="#656d76" text-anchor="end">≈¥21.45</text>
+<rect x="20" y="522" width="640" height="40" rx="8" fill="#f6f8fa"/>
+<text class="body" x="36" y="548" fill="#1f2328" text-anchor="start">Netcup · VPS piko G11s BW25</text>
+<text class="body" x="492" y="548" fill="#1f2328" text-anchor="end">€11.88 / yr</text>
+<text class="estimate" x="644" y="548" fill="#656d76" text-anchor="end">≈¥7.39</text>
+<line x1="28" y1="578" x2="652" y2="578" stroke="#d0d7de"/>
+<text class="small" x="28" y="600" fill="#656d76" text-anchor="start">FX 2026-10-23 · ECB via Frankfurter · latest available reference rates</text>
+<text class="small" x="28" y="619" fill="#656d76" text-anchor="start">1 unit → CNY: TRY 0.1341 · GBP 8.9170 · CAD 4.7660 · EUR 7.4660</text>
+<text class="small" x="28" y="638" fill="#656d76" text-anchor="start">Estimates exclude bank FX fees · annualized at current subscriptions</text>
+<text class="small" x="28" y="657" fill="#656d76" text-anchor="start">Updated 2026-10-25 00:58 UTC+8</text>
+</svg>
