@@ -45,6 +45,6 @@
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/liuyunfz/liuyunfz/status-card/internet-costs-dark.svg">
     <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/liuyunfz/liuyunfz/status-card/internet-costs-light.svg">
-    <img src="https://raw.githubusercontent.com/liuyunfz/liuyunfz/status-card/internet-costs-light.svg" width="680" alt="Internet recurring expenses: original-currency charges and annualized amounts, with total monthly and annualized CNY estimates at the displayed exchange rates">
+    <img src="https://raw.githubusercontent.com/liuyunfz/liuyunfz/status-card/internet-costs-light.svg" width="680" alt="Internet recurring expenses: original-currency charges and payment cycles with approximate monthly CNY per item, plus monthly and annualized CNY totals at the displayed exchange rates">
   </picture>
 </p>

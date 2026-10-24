@@ -117,7 +117,7 @@ Edit `data/recurring-expenses.json` to maintain the public recurring charges.
 `amount` is the original-currency charge **per subscription per payment cycle**,
 `quantity` multiplies that charge, and `months` is 1 (monthly) or 12 (annual).
 Plus is TRY 499.99 monthly; the two Team subscriptions are separate GBP 5.50 monthly entries; Netcup is EUR 11.88 once a year, equivalent
-to EUR 0.99 per month. Amounts, annualized charges and annual-payment monthly equivalents are derived from these values.
+to EUR 0.99 per month. Original charges and CNY monthly equivalents are derived from these values.
 
 Every expense generation fetches Frankfurter v1's latest ECB reference rates
 for CNY, USD, TRY, GBP and CAD, all quoted against EUR for the same date. The
@@ -133,9 +133,10 @@ Monthly CNY equals amount × quantity × exchange rate ÷ cycle months.
 Annualized CNY is the unrounded monthly total × 12, not historical spending.
 Decimal arithmetic is used throughout; display values round half up to two
 places, so individually rounded rows can differ from the total by a cent.
-Currency conversion fees are excluded. Only the two summary totals use CNY. Each item shows its original charge,
-payment cycle and annualized amount in its original currency; annual-payment
-rows also explain their original-currency monthly equivalent.
+Currency conversion fees are excluded. The summary shows monthly and annualized CNY totals. Each single-line item
+uses three columns: service, original charge with payment cycle (`/ mo` or
+`/ yr`), and approximate monthly CNY. The monthly estimate uses smaller muted
+text. Per-item annualized amounts are omitted to keep the ledger compact.
 
 The publisher allows exactly six SVGs and no raw rate JSON. A requested-source
 failure prevents publishing the whole set and preserves the previous cards

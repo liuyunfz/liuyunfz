@@ -121,7 +121,7 @@ def render_svg(rows: list[dict], rates: Rates, theme_name: str, *, now: datetime
     accent = "#58a6ff" if theme_name == "dark" else "#0969da"
     monthly = sum((monthly_cny(row, rates) for row in rows), Decimal(0))
     groups = [category for category in ("AI SERVICES", "INFRASTRUCTURE", "DIGITAL ESSENTIALS") if any(row["category"] == category for row in rows)]
-    height = 210 + 54 * len(groups) + sum(60 if row["months"] == 12 else 48 for row in rows) + 12 * (len(groups) - 1) + 100
+    height = 210 + 54 * len(groups) + 48 * len(rows) + 12 * (len(groups) - 1) + 100
     updated = (now or datetime.now(UTC)).astimezone(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M UTC+8")
     def text(x, y, value, kind="body", color=None, anchor="start"):
         return f'<text class="{kind}" x="{x}" y="{y}" fill="{color or theme.text}" text-anchor="{anchor}">{html.escape(value)}</text>'
@@ -130,7 +130,7 @@ def render_svg(rows: list[dict], rates: Rates, theme_name: str, *, now: datetime
     out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="680" height="{height}" viewBox="0 0 680 {height}" role="img" aria-labelledby="cost-title cost-desc">',
            '<title id="cost-title">Internet recurring expenses</title>',
            f'<desc id="cost-desc">Monthly estimate CNY {money(monthly)}. Annualized estimate CNY {money(monthly * 12)}. ECB reference rates dated {rates.date}; fetched via Frankfurter. Estimates exclude bank conversion fees.</desc>',
-           '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.title{font-size:20px;font-weight:700}.total{font-size:30px;font-weight:700}.body{font-size:13px;font-weight:600}.small{font-size:11px}.label{font-size:10px;font-weight:600}.section{font-size:11px;font-weight:700}</style>',
+           '<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.title{font-size:20px;font-weight:700}.total{font-size:30px;font-weight:700}.body{font-size:13px;font-weight:600}.small{font-size:11px}.estimate{font-size:12px;font-weight:400}.label{font-size:10px;font-weight:600}.section{font-size:11px;font-weight:700}</style>',
            f'<rect x="0.5" y="0.5" width="679" height="{height-1}" rx="14" fill="{theme.background}" stroke="{theme.border}"/>',
            text(28,35,"Internet · Recurring Costs","title"), text(28,58,"AI subscriptions · infrastructure · CNY estimates","small",theme.muted)]
     for x,label,value in ((28,"MONTHLY EQUIVALENT",monthly),(350,"ANNUALIZED COST",monthly*12)):
@@ -141,9 +141,8 @@ def render_svg(rows: list[dict], rates: Rates, theme_name: str, *, now: datetime
             y += 12
         out += [text(28,y+12,group,"section",accent),
                 text(36,y+37,"SERVICE / PLAN","label",theme.muted),
-                text(380,y+37,"AMOUNT","label",theme.muted,"end"),
-                text(492,y+37,"CYCLE","label",theme.muted,"end"),
-                text(644,y+37,"ANNUALIZED","label",theme.muted,"end")]
+                text(492,y+37,"ORIGINAL / CYCLE","label",theme.muted,"end"),
+                text(644,y+37,"MONTHLY CNY","label",theme.muted,"end")]
         y += 54
         for row in rows:
             if row["category"] != group:
@@ -151,17 +150,13 @@ def render_svg(rows: list[dict], rates: Rates, theme_name: str, *, now: datetime
             charge = row["amount"] * row["quantity"]
             symbol = SYMBOLS[row["currency"]]
             amount = symbol + money(charge)
-            annual = symbol + money(charge * 12 / row["months"])
-            cycle = "Monthly" if row["months"] == 1 else "Yearly"
-            row_height = 52 if row["months"] == 12 else 40
-            baseline = y + (22 if row["months"] == 12 else 26)
+            cycle = "mo" if row["months"] == 1 else "yr"
+            row_height = 40
+            baseline = y + 26
             out += [rect(20,y,640,row_height,theme.row),
                     text(36,baseline,row["name"]),
-                    text(380,baseline,amount,"body",anchor="end"),
-                    text(492,baseline,cycle,"small",theme.muted,"end"),
-                    text(644,baseline,annual,"body",anchor="end")]
-            if row["months"] == 12:
-                out.append(text(36,y+42,"Equivalent to "+symbol+money(charge / 12)+" / month","small",theme.muted))
+                    text(492,baseline,amount+" / "+cycle,"body",anchor="end"),
+                    text(644,baseline,"≈¥"+money(monthly_cny(row,rates)),"estimate",theme.muted,"end")]
             y += row_height + 8
     out += [f'<line x1="28" y1="{y+8}" x2="652" y2="{y+8}" stroke="{theme.border}"/>',text(28,y+30,f"FX {rates.date} · ECB via Frankfurter · latest available reference rates","small",theme.muted),text(28,y+49,"1 unit → CNY: "+" · ".join(f"{code} {rates.cny[code]:.4f}" for code in CURRENCIES if any(row["currency"] == code for row in rows)),"small",theme.muted),text(28,y+68,"Estimates exclude bank FX fees · annualized at current subscriptions","small",theme.muted),text(28,y+87,"Updated "+updated,"small",theme.muted),'</svg>']
     return "\n".join(out)+"\n"
