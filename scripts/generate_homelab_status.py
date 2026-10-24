@@ -697,6 +697,11 @@ def render_svg(
                 f'<text class="footer" x="28" y="{height - 20}" '
                 f'fill="{theme.muted}">Updated {updated_label}</text>'
             ),
+            (
+                f'<text class="state" x="652" y="{height - 20}" text-anchor="end" '
+                f'fill="{("#58a6ff" if theme_name == "dark" else "#0969da")}">'
+                'View dashboard ↗</text>'
+            ),
             "</svg>",
         ]
     )

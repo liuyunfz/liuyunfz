@@ -11,6 +11,8 @@ from unittest import mock
 from scripts import generate_homelab_status as generator
 from scripts import generate_sub2api_activity as activity_generator
 from scripts import validate_homelab_status as validator
+from scripts import generate_internet_costs as expenses
+from decimal import Decimal
 from tests.test_generate_homelab_status import TEST_SALT, load_fixture
 
 
@@ -35,6 +37,12 @@ class OutputValidationTests(unittest.TestCase):
             directory,
             generated_at=FIXED_NOW,
         )
+
+        rates = expenses.Rates(FIXED_NOW.date(), {code: Decimal("8") for code in expenses.CURRENCIES})
+        for theme in ("dark", "light"):
+            (directory / f"internet-costs-{theme}.svg").write_text(
+                expenses.render_svg(expenses.load_expenses(), rates, theme, now=FIXED_NOW)
+            )
 
     def test_accepts_generated_light_and_dark_cards(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -92,7 +100,7 @@ class OutputValidationTests(unittest.TestCase):
             output = Path(temp_dir)
             self._generate(output)
             (output / "status.json").write_text("{}", encoding="utf-8")
-            with self.assertRaisesRegex(validator.ValidationError, "exactly four"):
+            with self.assertRaisesRegex(validator.ValidationError, "exactly six"):
                 validator.validate_output_directory(output)
 
     def test_rejects_private_ai_gateway_detail(self) -> None:

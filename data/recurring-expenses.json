@@ -1,0 +1,42 @@
+[
+  {
+    "name": "OpenAI · Plus",
+    "category": "AI SERVICES",
+    "currency": "TRY",
+    "amount": "499.99",
+    "months": 1,
+    "quantity": 1
+  },
+  {
+    "name": "OpenAI · Team 01",
+    "category": "AI SERVICES",
+    "currency": "GBP",
+    "amount": "5.50",
+    "months": 1,
+    "quantity": 1
+  },
+  {
+    "name": "OpenAI · Team 02",
+    "category": "AI SERVICES",
+    "currency": "GBP",
+    "amount": "5.50",
+    "months": 1,
+    "quantity": 1
+  },
+  {
+    "name": "VMISS · US.LA.TRI.Basic",
+    "category": "INFRASTRUCTURE",
+    "currency": "CAD",
+    "amount": "4.50",
+    "months": 1,
+    "quantity": 1
+  },
+  {
+    "name": "Netcup · VPS piko G11s BW25",
+    "category": "INFRASTRUCTURE",
+    "currency": "EUR",
+    "amount": "11.88",
+    "months": 12,
+    "quantity": 1
+  }
+]

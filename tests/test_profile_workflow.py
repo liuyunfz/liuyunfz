@@ -39,10 +39,10 @@ class ProfileWorkflowTests(unittest.TestCase):
         self.assertIn('"23 3 * * *") refresh_sub2api=true', self.text)
         self.assertRegex(
             self.text,
-            r'(?s)\[\[ "\$EVENT_NAME" == "push" \]\].*?refresh_homelab=true\s+refresh_sub2api=true\s+else',
+            r'(?s)\[\[ "\$EVENT_NAME" == "push" \]\].*?refresh_homelab=true\s+refresh_sub2api=true\s+refresh_expenses=true\s+else',
         )
 
-    def test_generates_and_publishes_exactly_four_named_cards(self) -> None:
+    def test_generates_and_publishes_exactly_six_named_cards(self) -> None:
         self.assertIn("scripts/generate_homelab_status.py", self.text)
         self.assertIn("scripts/generate_sub2api_activity.py", self.text)
         for filename in (
@@ -50,9 +50,11 @@ class ProfileWorkflowTests(unittest.TestCase):
             "homelab-status-light.svg",
             "sub2api-activity-dark.svg",
             "sub2api-activity-light.svg",
+            "internet-costs-dark.svg",
+            "internet-costs-light.svg",
         ):
             self.assertIn(filename, self.text)
-        self.assertIn('"${#published_paths[@]}" -ne 4', self.text)
+        self.assertIn('"${#published_paths[@]}" -ne 6', self.text)
         self.assertIn("validate_homelab_status.py", self.text)
 
     def test_preserves_previous_cards_until_the_new_set_is_valid(self) -> None:

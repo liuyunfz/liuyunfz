@@ -7,16 +7,17 @@ on:
     paths:
       - .github/workflows/homelab-status.yml
       - scripts/**
+      - data/**
       - tests/**
   schedule:
     # Homelab: twice an hour, away from the busy start of the hour.
     - cron: "17,47 * * * *"
-    # AI gateway: once a day. GitHub Actions schedules are expressed in UTC.
+    # AI gateway and expense exchange rates: once a day. GitHub Actions schedules are expressed in UTC.
     - cron: "23 3 * * *"
   workflow_dispatch:
     inputs:
       target:
-        description: Cards to refresh
+        description: Cards to refresh (both refreshes all three card types)
         required: true
         default: both
         type: choice
@@ -24,6 +25,7 @@ on:
           - both
           - homelab
           - sub2api
+          - expenses
 
 permissions: {}
 
@@ -79,18 +81,23 @@ jobs:
 
           refresh_homelab=false
           refresh_sub2api=false
+          refresh_expenses=false
 
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             case "$REQUESTED_TARGET" in
               both)
                 refresh_homelab=true
                 refresh_sub2api=true
+                refresh_expenses=true
                 ;;
               homelab)
                 refresh_homelab=true
                 ;;
               sub2api)
                 refresh_sub2api=true
+                ;;
+              expenses)
+                refresh_expenses=true
                 ;;
               *)
                 echo "::error::Unknown manual refresh target."
@@ -100,16 +107,17 @@ jobs:
           elif [[ "$EVENT_NAME" == "schedule" ]]; then
             case "$SCHEDULE_EXPRESSION" in
               "17,47 * * * *") refresh_homelab=true ;;
-              "23 3 * * *") refresh_sub2api=true ;;
+              "23 3 * * *") refresh_sub2api=true; refresh_expenses=true ;;
               *)
                 echo "::error::Unknown profile-card schedule."
                 exit 1
                 ;;
             esac
           elif [[ "$EVENT_NAME" == "push" ]]; then
-            # Verify both upstreams on push, including after access-rule changes.
+            # Refresh all sources on push, including after configuration changes.
             refresh_homelab=true
             refresh_sub2api=true
+            refresh_expenses=true
           else
             echo "::error::Unsupported workflow event."
             exit 1
@@ -131,6 +139,8 @@ jobs:
             homelab-status-light.svg
             sub2api-activity-dark.svg
             sub2api-activity-light.svg
+            internet-costs-dark.svg
+            internet-costs-light.svg
           )
 
           if [[ -n "$remote_line" ]]; then
@@ -163,7 +173,7 @@ jobs:
             )
             for remote_path in "${remote_paths[@]}"; do
               case "$remote_path" in
-                homelab-status-dark.svg|homelab-status-light.svg|sub2api-activity-dark.svg|sub2api-activity-light.svg) ;;
+                homelab-status-dark.svg|homelab-status-light.svg|sub2api-activity-dark.svg|sub2api-activity-light.svg|internet-costs-dark.svg|internet-costs-light.svg) ;;
                 *)
                   echo "::error::The status-card branch contains an unexpected file."
                   exit 1
@@ -189,10 +199,16 @@ jobs:
             refresh_sub2api=true
           fi
 
+          if [[ ! -f "$OUTPUT_DIR/internet-costs-dark.svg" ||
+                ! -f "$OUTPUT_DIR/internet-costs-light.svg" ]]; then
+            refresh_expenses=true
+          fi
+
           {
             echo "base_sha=$base_sha"
             echo "refresh_homelab=$refresh_homelab"
             echo "refresh_sub2api=$refresh_sub2api"
+            echo "refresh_expenses=$refresh_expenses"
           } >>"$GITHUB_OUTPUT"
 
       - name: Generate homelab cards
@@ -382,9 +398,26 @@ jobs:
             "$SUB2API_WORK_DIR/sub2api-activity-light.svg" \
             "$OUTPUT_DIR/"
 
+      - name: Generate internet expense cards
+        id: generate_expenses
+        continue-on-error: true
+        if: ${{ steps.plan.outputs.refresh_expenses == 'true' }}
+        env:
+          OUTPUT_DIR: ${{ runner.temp }}/status-card-output
+          EXPENSE_WORK_DIR: ${{ runner.temp }}/expense-card-output
+        run: |
+          set -euo pipefail
+          umask 077
+          install -d -m 0700 "$EXPENSE_WORK_DIR"
+          python scripts/generate_internet_costs.py --output-dir "$EXPENSE_WORK_DIR"
+          install -m 0600 -- \
+            "$EXPENSE_WORK_DIR/internet-costs-dark.svg" \
+            "$EXPENSE_WORK_DIR/internet-costs-light.svg" \
+            "$OUTPUT_DIR/"
+
       - name: Validate all publishable output
         id: validate
-        if: ${{ (steps.generate_homelab.outcome == 'success' || steps.generate_homelab.outcome == 'skipped') && (steps.generate_sub2api.outcome == 'success' || steps.generate_sub2api.outcome == 'skipped') }}
+        if: ${{ (steps.generate_homelab.outcome == 'success' || steps.generate_homelab.outcome == 'skipped') && (steps.generate_sub2api.outcome == 'success' || steps.generate_sub2api.outcome == 'skipped') && (steps.generate_expenses.outcome == 'success' || steps.generate_expenses.outcome == 'skipped') }}
         env:
           HOMELAB_ALIAS_SALT: ${{ secrets.HOMELAB_ALIAS_SALT }}
           KOMARI_BEARER_TOKEN: ${{ secrets.KOMARI_BEARER_TOKEN }}
@@ -426,6 +459,8 @@ jobs:
             "$OUTPUT_DIR/homelab-status-light.svg" \
             "$OUTPUT_DIR/sub2api-activity-dark.svg" \
             "$OUTPUT_DIR/sub2api-activity-light.svg" \
+            "$OUTPUT_DIR/internet-costs-dark.svg" \
+            "$OUTPUT_DIR/internet-costs-light.svg" \
             "$PUBLISH_DIR/"
 
           git -C "$PUBLISH_DIR" init --initial-branch=status-card --quiet
@@ -437,16 +472,20 @@ jobs:
             homelab-status-dark.svg \
             homelab-status-light.svg \
             sub2api-activity-dark.svg \
-            sub2api-activity-light.svg
+            sub2api-activity-light.svg \
+            internet-costs-dark.svg \
+            internet-costs-light.svg
 
           mapfile -t published_paths < <(
             git -C "$PUBLISH_DIR" ls-files | LC_ALL=C sort
           )
-          if [[ "${#published_paths[@]}" -ne 4 ||
+          if [[ "${#published_paths[@]}" -ne 6 ||
                 "${published_paths[0]}" != "homelab-status-dark.svg" ||
                 "${published_paths[1]}" != "homelab-status-light.svg" ||
-                "${published_paths[2]}" != "sub2api-activity-dark.svg" ||
-                "${published_paths[3]}" != "sub2api-activity-light.svg" ]]; then
+                "${published_paths[2]}" != "internet-costs-dark.svg" ||
+                "${published_paths[3]}" != "internet-costs-light.svg" ||
+                "${published_paths[4]}" != "sub2api-activity-dark.svg" ||
+                "${published_paths[5]}" != "sub2api-activity-light.svg" ]]; then
             echo "::error::Refusing to publish unexpected files."
             exit 1
           fi
@@ -532,7 +571,7 @@ jobs:
             origin HEAD:refs/heads/status-card
 
       - name: Report a failed card source
-        if: ${{ !cancelled() && (steps.generate_homelab.outcome == 'failure' || steps.generate_sub2api.outcome == 'failure') }}
+        if: ${{ !cancelled() && (steps.generate_homelab.outcome == 'failure' || steps.generate_sub2api.outcome == 'failure' || steps.generate_expenses.outcome == 'failure') }}
         run: |
           echo "::error::One or more requested card sources failed; no cards were published."
           exit 1
@@ -541,6 +580,7 @@ jobs:
         if: ${{ always() }}
         env:
           HOMELAB_OUTCOME: ${{ steps.generate_homelab.outcome }}
+          EXPENSES_OUTCOME: ${{ steps.generate_expenses.outcome }}
           SUB2API_OUTCOME: ${{ steps.generate_sub2api.outcome }}
           VALIDATION_OUTCOME: ${{ steps.validate.outcome }}
           PUBLISH_OUTCOME: ${{ steps.publish_cards.outcome }}
@@ -549,7 +589,7 @@ jobs:
           import os
           allowed = {"success", "failure", "skipped", "cancelled"}
           lines = ["### Card generation outcomes", "", "Use these outcomes, not the continue-on-error step badge.", ""]
-          for stage, key in (("Homelab", "HOMELAB_OUTCOME"), ("Sub2API", "SUB2API_OUTCOME"), ("Validation", "VALIDATION_OUTCOME"), ("Publish", "PUBLISH_OUTCOME")):
+          for stage, key in (("Homelab", "HOMELAB_OUTCOME"), ("Sub2API", "SUB2API_OUTCOME"), ("Expenses", "EXPENSES_OUTCOME"), ("Validation", "VALIDATION_OUTCOME"), ("Publish", "PUBLISH_OUTCOME")):
               outcome = os.environ.get(key, "")
               lines.append(f"- {stage}: {outcome if outcome in allowed else 'unknown'}")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:

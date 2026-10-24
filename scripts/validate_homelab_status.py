@@ -17,6 +17,8 @@ EXPECTED_FILES = {
     "homelab-status-light.svg",
     "sub2api-activity-dark.svg",
     "sub2api-activity-light.svg",
+    "internet-costs-dark.svg",
+    "internet-costs-light.svg",
 }
 MIN_FILE_BYTES = 512
 MAX_FILE_BYTES = 256 * 1024
@@ -128,7 +130,12 @@ def validate_card(path: Path, forbidden_literals: tuple[bytes, ...]) -> None:
         raise ValidationError(f"{path.name}: private configuration found in SVG")
     if any(pattern.search(data) for pattern in FORBIDDEN_PATTERNS):
         raise ValidationError(f"{path.name}: identifier or address found in SVG")
-    if FORBIDDEN_TERMS.search(data):
+    # Public ledger amounts are explicitly configured by the profile owner.
+    # Keep all credential/address checks and the private-source vocabulary guard.
+    public_terms = {b"cost", b"billing"} if path.name in {
+        "internet-costs-dark.svg", "internet-costs-light.svg"
+    } else set()
+    if any(match.group().lower() not in public_terms for match in FORBIDDEN_TERMS.finditer(data)):
         raise ValidationError(f"{path.name}: private detail found in SVG")
 
     try:
@@ -174,7 +181,7 @@ def validate_output_directory(output_dir: Path) -> None:
         raise ValidationError("generated output directory is unavailable") from None
 
     if {entry.name for entry in entries} != EXPECTED_FILES:
-        raise ValidationError("generated output does not contain exactly four cards")
+        raise ValidationError("generated output does not contain exactly six cards")
 
     forbidden_literals = _forbidden_literals()
     for entry in sorted(entries):
@@ -196,7 +203,7 @@ def main(argv: list[str] | None = None) -> int:
     except ValidationError as error:
         print(f"status-card validation: {error}", file=sys.stderr)
         return 1
-    print("status-card validation: four sanitized SVG files are ready")
+    print("status-card validation: six sanitized SVG files are ready")
     return 0
 
 

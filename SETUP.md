@@ -2,12 +2,12 @@
 
 The profile embeds static light/dark SVG images. GitHub README images cannot run
 JavaScript, switch chart windows, or display interactive chart tooltips. The AI
-card therefore shows 7D, 30D, and 90D together. The publisher retains exactly four
+card therefore shows 7D, 30D, and 90D together. The publisher retains exactly six
 SVG files in a single-root-commit branch, with no raw response or JSON artifact.
 
 ## Data windows
 
-Both cards display update timestamps in UTC+8. The Sub2API collector requests
+All cards display update timestamps in UTC+8. The Sub2API collector requests
 90 completed Asia/Shanghai (UTC+8) calendar days, excluding today, with the
 explicit `timezone=Asia/Shanghai` query parameter. Each
 window's totals are derived from daily trend rows, not the dashboard's lifetime
@@ -84,7 +84,9 @@ categories; the new network retry policy applies only to Sub2API.
 
 - Homelab: minute 17 and 47 of every hour (48 scheduled attempts per day).
 - Sub2API: 03:23 UTC daily (11:23 Asia/Shanghai).
-- Both: manual `both` runs and matching generator/workflow code pushes.
+- Expenses: 03:23 UTC daily, together with Sub2API.
+- All three card types: manual `both` runs and matching generator/workflow/data pushes.
+- Expenses alone: manual `expenses` runs.
 
 These are scheduled attempts, not an availability guarantee: GitHub can delay
 or drop scheduled jobs under load, and inactive public repositories can have
@@ -105,7 +107,37 @@ duplicate names fall back to aliases derived using `HOMELAB_ALIAS_SALT` (at leas
 
 Configured names can themselves disclose a provider, purpose or machine size;
 review those names in Komari. IPs, UUIDs, costs, regions and raw telemetry are
-not copied as separate fields. No Komari link is enabled in the README: linking
-it would associate the profile with the complete public dashboard, including
-the details visible there. Add an HTML link around its `picture` only after
-accepting that broader public association.
+not copied as separate fields. The profile owner has requested a public link to `https://monitor.6yfz.cn/`.
+The README wraps the Homelab picture in that link; its SVG has a
+"View dashboard" hint. The dashboard exposes its own public details.
+
+## Internet expense ledger
+
+Edit `data/recurring-expenses.json` to maintain the public recurring charges.
+`amount` is the original-currency charge **per subscription per payment cycle**,
+`quantity` multiplies that charge, and `months` is 1 (monthly) or 12 (annual).
+Plus is TRY 499.99 monthly; the two Team subscriptions are separate GBP 5.50 monthly entries; Netcup is EUR 11.88 once a year, equivalent
+to EUR 0.99 per month. Amounts, annualized charges and annual-payment monthly equivalents are derived from these values.
+
+Every expense generation fetches Frankfurter v1's latest ECB reference rates
+for CNY, USD, TRY, GBP and CAD, all quoted against EUR for the same date. The
+CNY conversion is EUR/CNY divided by EUR/source-currency; EUR uses EUR/CNY
+directly. These are reference estimates, not bank settlement rates. Weekends
+and holidays use the latest published business-day rates; the card displays
+their date, conversion rates and generation time. Responses over seven days
+old, future dates, missing currencies and nonpositive/nonfinite rates fail
+rather than producing misleading totals. Temporary fetch errors get up to
+three attempts. No API key or new secret is needed.
+
+Monthly CNY equals amount × quantity × exchange rate ÷ cycle months.
+Annualized CNY is the unrounded monthly total × 12, not historical spending.
+Decimal arithmetic is used throughout; display values round half up to two
+places, so individually rounded rows can differ from the total by a cent.
+Currency conversion fees are excluded. Only the two summary totals use CNY. Each item shows its original charge,
+payment cycle and annualized amount in its original currency; annual-payment
+rows also explain their original-currency monthly equivalent.
+
+The publisher allows exactly six SVGs and no raw rate JSON. A requested-source
+failure prevents publishing the whole set and preserves the previous cards
+and their timestamps. The ledger allows public cost/billing wording while all
+identifier, credential and active-SVG checks remain enabled.
