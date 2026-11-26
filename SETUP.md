@@ -68,7 +68,8 @@ The Sub2API step publishes allowlisted `card-diag` lines: attempt number,
 category, HTTP status (0 means unavailable), elapsed milliseconds and whether
 another attempt will follow. Categories distinguish timeout, DNS, TLS, network,
 HTTP, non-JSON content type, JSON decoding, size and validation failures.
-The scheduled workflow uses a 30-second socket timeout and at most 3 attempts
+The workflow includes the last allowlisted AI gateway diagnostic in the run's
+error annotations. It uses a 60-second socket timeout and at most 3 attempts
 with 2s/4s backoff for temporary network failures or HTTP 408/429/500/502/503/504.
 The timeout is per socket operation, not a total request deadline; the workflow
 also has its existing 8-minute overall limit. Authentication, WAF denial, TLS,
@@ -116,7 +117,7 @@ The README wraps the Homelab picture in that link; its SVG has a
 Edit `data/recurring-expenses.json` to maintain the public recurring charges.
 `amount` is the original-currency charge **per subscription per payment cycle**,
 `quantity` multiplies that charge, and `months` is 1 (monthly) or 12 (annual).
-Plus is TRY 499.99 monthly; the two Team subscriptions are separate GBP 5.50 monthly entries; Netcup is EUR 11.88 once a year, equivalent
+Google AI Ultra 20x is TRY 2,949.99 per month. Plus is TRY 499.99 monthly; the two Team subscriptions are separate GBP 5.50 monthly entries; Netcup is EUR 11.88 once a year, equivalent
 to EUR 0.99 per month. Original charges and CNY monthly equivalents are derived from these values.
 
 Every expense generation fetches Frankfurter v1's latest ECB reference rates

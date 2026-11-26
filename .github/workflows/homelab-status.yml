@@ -345,10 +345,10 @@ jobs:
           # The admin credential is available only to this generator and the
           # local sanitizer. Neither stdout nor stderr is copied to the branch.
           if ! python scripts/generate_sub2api_activity.py \
-              --timeout-seconds 30 \
+              --timeout-seconds 60 \
               --output-dir "$SUB2API_WORK_DIR" \
               >"$generator_log" 2>&1; then
-            python scripts/report_card_diagnostics.py "$generator_log" --failed
+            python scripts/report_card_diagnostics.py "$generator_log" --failed --annotate
             case "$(tail -n 1 "$generator_log" 2>/dev/null || true)" in
               "activity-card: SUB2API_WAF_BYPASS_TOKEN is invalid")
                 echo "::error::SUB2API_WAF_BYPASS_TOKEN must contain 32-256 ASCII letters, digits, underscores or hyphens. Its value was not logged."

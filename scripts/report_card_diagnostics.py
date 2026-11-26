@@ -40,7 +40,7 @@ for reason in ("generated output directory is unavailable", "generated output do
     ERRORS[f"status-card validation: {reason}"] = f"validation: {reason}"
 
 
-def report(path: Path, *, failed: bool = False) -> None:
+def report(path: Path, *, failed: bool = False, annotate: bool = False) -> None:
     # Read only a bounded tail. Never print arbitrary lines, traceback, URLs,
     # response bodies, IDs, credentials or exception messages.
     try:
@@ -50,21 +50,26 @@ def report(path: Path, *, failed: bool = False) -> None:
             lines = source.read(65536).decode("utf-8", errors="replace").splitlines()
     except OSError:
         lines = []
-    emitted = False
+    last_diagnostic = None
     for line in lines[-100:]:
         if ATTEMPT.fullmatch(line):
-            print(line)
-            emitted = True
+            last_diagnostic = line
         elif line in ERRORS:
-            print("card-diag " + ERRORS[line])
-            emitted = True
-    if failed and not emitted:
-        print("card-diag category=unclassified; raw details suppressed")
+            last_diagnostic = "card-diag " + ERRORS[line]
+        else:
+            continue
+        print(last_diagnostic)
+    if failed and last_diagnostic is None:
+        last_diagnostic = "card-diag category=unclassified; raw details suppressed"
+        print(last_diagnostic)
+    if failed and annotate:
+        print(f"::error::{last_diagnostic}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("log", type=Path)
     parser.add_argument("--failed", action="store_true")
+    parser.add_argument("--annotate", action="store_true")
     args = parser.parse_args()
-    report(args.log, failed=args.failed)
+    report(args.log, failed=args.failed, annotate=args.annotate)

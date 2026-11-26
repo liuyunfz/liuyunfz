@@ -24,6 +24,14 @@
     "quantity": 1
   },
   {
+    "name": "Google AI Ultra 20x",
+    "category": "AI SERVICES",
+    "currency": "TRY",
+    "amount": "2949.99",
+    "months": 1,
+    "quantity": 1
+  },
+  {
     "name": "VMISS · US.LA.TRI.Basic",
     "category": "INFRASTRUCTURE",
     "currency": "CAD",

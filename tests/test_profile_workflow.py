@@ -11,7 +11,8 @@ WORKFLOW = ROOT / ".github" / "workflows" / "homelab-status.yml"
 
 class ProfileWorkflowTests(unittest.TestCase):
     def test_safe_diagnostics_and_actual_outcome_summary(self) -> None:
-        self.assertIn('--timeout-seconds 30', self.text)
+        self.assertIn('--timeout-seconds 60', self.text)
+        self.assertIn('python scripts/report_card_diagnostics.py "$generator_log" --failed --annotate', self.text)
         self.assertIn('python scripts/report_card_diagnostics.py "$generator_log" --failed', self.text)
         self.assertIn('python scripts/report_card_diagnostics.py "$generator_log"\n', self.text)
         self.assertIn('python scripts/report_card_diagnostics.py "$validator_log" --failed', self.text)

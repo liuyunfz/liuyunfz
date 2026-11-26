@@ -137,6 +137,12 @@ class DiagnosticsTests(unittest.TestCase):
             with redirect_stdout(output):
                 reporter.report(path, failed=True)
             self.assertEqual(output.getvalue().splitlines(), [valid, "card-diag sub2api: output write failed"])
+            output = io.StringIO()
+            with redirect_stdout(output):
+                reporter.report(path, failed=True, annotate=True)
+            self.assertEqual(output.getvalue().splitlines(), [
+                valid, "card-diag sub2api: output write failed", "::error::card-diag sub2api: output write failed",
+            ])
             path.write_text(private)
             output = io.StringIO()
             with redirect_stdout(output):

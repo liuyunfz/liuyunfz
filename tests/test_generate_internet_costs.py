@@ -25,15 +25,19 @@ class ExpenseTests(unittest.TestCase):
     def test_cross_rates_quantity_and_annual_payment(self):
         self.assertEqual(self.rates.cny["EUR"], Decimal("7.466"))
         self.assertEqual(self.rates.cny["GBP"], Decimal("7.466") / Decimal("0.83728"))
-        team, netcup = self.rows[1], self.rows[4]
+        plans = {row["name"]: row for row in self.rows}
+        team, netcup = plans["OpenAI · Team 01"], plans["Netcup · VPS piko G11s BW25"]
         self.assertEqual(team["amount"] * team["quantity"], Decimal("5.50"))
-        self.assertEqual(self.rows[2]["amount"], Decimal("5.50"))
+        self.assertEqual(plans["OpenAI · Team 02"]["amount"], Decimal("5.50"))
+        ultra = plans["Google AI Ultra 20x"]
+        self.assertEqual((ultra["category"], ultra["currency"], ultra["amount"], ultra["months"], ultra["quantity"]),
+                         ("AI SERVICES", "TRY", Decimal("2949.99"), 1, 1))
         self.assertEqual(netcup["months"], 12)
         self.assertEqual(costs.monthly_cny(netcup, self.rates), Decimal("0.99") * Decimal("7.466"))
-        self.assertEqual([costs.money(costs.monthly_cny(r, self.rates)) for r in self.rows], ["67.05", "49.04", "49.04", "21.45", "7.39"])
+        self.assertEqual(costs.money(costs.monthly_cny(ultra, self.rates)), "395.62")
         total = sum(costs.monthly_cny(r, self.rates) for r in self.rows)
-        self.assertEqual(costs.money(total), "193.98")
-        self.assertEqual(costs.money(total * 12), "2,327.73")
+        self.assertEqual(costs.money(total), "589.60")
+        self.assertEqual(costs.money(total * 12), "7,075.15")
 
     def test_rejects_missing_nonfinite_negative_and_wrong_base_quotes(self):
         for code, value in (("CNY", "NaN"), ("GBP", 0), ("CAD", -1), ("USD", "Infinity"), ("USD", True), ("TRY", 0)):
@@ -71,13 +75,16 @@ class ExpenseTests(unittest.TestCase):
                 self.assertNotIn("₺5,999.88", svg)
                 self.assertIn("₺499.99 / mo", svg)
                 self.assertIn("≈¥67.05", svg)
+                self.assertIn("Google AI Ultra 20x", svg)
+                self.assertIn("₺2,949.99 / mo", svg)
+                self.assertIn("≈¥395.62", svg)
                 self.assertIn("OpenAI · Team 01", svg)
                 self.assertIn("OpenAI · Team 02", svg)
                 self.assertEqual(svg.count("£5.50"), 2)
                 self.assertNotIn("£66.00", svg)
                 self.assertEqual(svg.count("≈¥49.04"), 2)
                 self.assertNotIn("CNY / MONTH", svg)
-                self.assertEqual(svg.count("≈¥"), 5)
+                self.assertEqual(svg.count("≈¥"), len(self.rows))
                 self.assertNotIn(">ANNUALIZED<", svg)
                 self.assertIn("MONTHLY CNY", svg)
                 self.assertIn("€11.88", svg)
