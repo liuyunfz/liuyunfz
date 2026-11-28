@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="336" viewBox="0 0 680 336" role="img" aria-labelledby="activity-title activity-description">
+<title id="activity-title">Self-hosted AI Gateway Activity</title>
+<desc id="activity-description">Personal requests and tokens over the last 7, 30, and 90 completed UTC+8 days. Each chart is independently scaled. Updated 2026-11-27 20:45 UTC+8.</desc>
+<style>text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.title{font-size:19px;font-weight:700}.badge{font-size:12px;font-weight:700}.metric-label{font-size:10px;font-weight:700}.metric{font-weight:700}.chart-label{font-size:10px;font-weight:650}.chart-peak,.footer,.empty{font-size:10px}</style>
+<rect x="0.5" y="0.5" width="679" height="335" rx="8" fill="#0d1117" stroke="#30363d"/>
+<text class="title" x="24" y="31" fill="#e6edf3">Self-hosted AI Gateway</text>
+<text class="footer" x="654" y="30" text-anchor="end" fill="#8b949e">PERSONAL · UTC+8 DAYS</text>
+<line x1="24" y1="45" x2="654" y2="45" stroke="#30363d"/>
+<text class="badge" x="24" y="67" fill="#58a6ff">7D</text>
+<text class="footer" x="214" y="67" text-anchor="end" fill="#8b949e">Nov 20 - Nov 26</text>
+<text class="metric-label" x="24" y="94" fill="#8b949e">REQUESTS</text>
+<text class="metric" font-size="25.0" x="24" y="120" fill="#e6edf3">990</text>
+<text class="metric-label" x="24" y="200" fill="#8b949e">TOKENS</text>
+<text class="metric" font-size="25.0" x="24" y="226" fill="#e6edf3">137M</text>
+<text class="chart-label" x="24" y="137" fill="#e6edf3">Requests / day</text>
+<text class="chart-peak" x="214" y="137" text-anchor="end" fill="#8b949e">peak 331</text>
+<line x1="24" y1="149.0" x2="214" y2="149.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="24" y1="168.0" x2="214" y2="168.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="24" y1="187.0" x2="214" y2="187.0" stroke="#30363d" stroke-opacity="0.7"/>
+<polygon points="24.0,187.0 24.0,164.5 55.7,181.7 87.3,168.4 119.0,149.0 150.7,185.3 182.3,166.5 214.0,180.0 214.0,187.0" fill="#58a6ff" fill-opacity="0.12"/>
+<polyline points="24.0,164.5 55.7,181.7 87.3,168.4 119.0,149.0 150.7,185.3 182.3,166.5 214.0,180.0" fill="none" stroke="#58a6ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="214.0" cy="180.0" r="3.2" fill="#0d1117" stroke="#58a6ff" stroke-width="2"/>
+<text class="chart-label" x="24" y="243" fill="#e6edf3">Tokens / day</text>
+<text class="chart-peak" x="214" y="243" text-anchor="end" fill="#8b949e">peak 58.4M</text>
+<line x1="24" y1="255.0" x2="214" y2="255.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="24" y1="274.0" x2="214" y2="274.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="24" y1="293.0" x2="214" y2="293.0" stroke="#30363d" stroke-opacity="0.7"/>
+<polygon points="24.0,293.0 24.0,275.1 55.7,291.4 87.3,281.5 119.0,255.0 150.7,292.7 182.3,278.1 214.0,288.2 214.0,293.0" fill="#bc8cff" fill-opacity="0.12"/>
+<polyline points="24.0,275.1 55.7,291.4 87.3,281.5 119.0,255.0 150.7,292.7 182.3,278.1 214.0,288.2" fill="none" stroke="#bc8cff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="214.0" cy="288.2" r="3.2" fill="#0d1117" stroke="#bc8cff" stroke-width="2"/>
+<line x1="231" y1="58" x2="231" y2="291" stroke="#30363d"/>
+<text class="badge" x="244" y="67" fill="#58a6ff">30D</text>
+<text class="footer" x="434" y="67" text-anchor="end" fill="#8b949e">Oct 28 - Nov 26</text>
+<text class="metric-label" x="244" y="94" fill="#8b949e">REQUESTS</text>
+<text class="metric" font-size="25.0" x="244" y="120" fill="#e6edf3">3.36K</text>
+<text class="metric-label" x="244" y="200" fill="#8b949e">TOKENS</text>
+<text class="metric" font-size="25.0" x="244" y="226" fill="#e6edf3">416M</text>
+<text class="chart-label" x="244" y="137" fill="#e6edf3">Requests / day</text>
+<text class="chart-peak" x="434" y="137" text-anchor="end" fill="#8b949e">peak 378</text>
+<line x1="244" y1="149.0" x2="434" y2="149.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="244" y1="168.0" x2="434" y2="168.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="244" y1="187.0" x2="434" y2="187.0" stroke="#30363d" stroke-opacity="0.7"/>
+<polygon points="244.0,187.0 244.0,174.4 250.6,150.0 257.1,152.0 263.7,183.9 270.2,187.0 276.8,186.9 283.3,167.3 289.9,149.0 296.4,184.3 303.0,177.8 309.5,187.0 316.1,173.2 322.6,166.0 329.2,183.6 335.7,179.9 342.3,186.9 348.8,184.3 355.4,187.0 361.9,186.9 368.5,183.3 375.0,186.0 381.6,168.9 388.1,177.4 394.7,167.3 401.2,182.4 407.8,170.7 414.3,153.7 420.9,185.5 427.4,169.0 434.0,180.9 434.0,187.0" fill="#58a6ff" fill-opacity="0.12"/>
+<polyline points="244.0,174.4 250.6,150.0 257.1,152.0 263.7,183.9 270.2,187.0 276.8,186.9 283.3,167.3 289.9,149.0 296.4,184.3 303.0,177.8 309.5,187.0 316.1,173.2 322.6,166.0 329.2,183.6 335.7,179.9 342.3,186.9 348.8,184.3 355.4,187.0 361.9,186.9 368.5,183.3 375.0,186.0 381.6,168.9 388.1,177.4 394.7,167.3 401.2,182.4 407.8,170.7 414.3,153.7 420.9,185.5 427.4,169.0 434.0,180.9" fill="none" stroke="#58a6ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="434.0" cy="180.9" r="3.2" fill="#0d1117" stroke="#58a6ff" stroke-width="2"/>
+<text class="chart-label" x="244" y="243" fill="#e6edf3">Tokens / day</text>
+<text class="chart-peak" x="434" y="243" text-anchor="end" fill="#8b949e">peak 65.4M</text>
+<line x1="244" y1="255.0" x2="434" y2="255.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="244" y1="274.0" x2="434" y2="274.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="244" y1="293.0" x2="434" y2="293.0" stroke="#30363d" stroke-opacity="0.7"/>
+<polygon points="244.0,293.0 244.0,286.3 250.6,270.5 257.1,255.0 263.7,288.9 270.2,293.0 276.8,293.0 283.3,279.2 289.9,270.8 296.4,290.8 303.0,285.6 309.5,293.0 316.1,286.4 322.6,282.2 329.2,289.1 335.7,288.3 342.3,293.0 348.8,292.1 355.4,293.0 361.9,293.0 368.5,290.8 375.0,292.0 381.6,282.3 388.1,288.3 394.7,277.1 401.2,291.6 407.8,282.8 414.3,259.1 420.9,292.8 427.4,279.7 434.0,288.7 434.0,293.0" fill="#bc8cff" fill-opacity="0.12"/>
+<polyline points="244.0,286.3 250.6,270.5 257.1,255.0 263.7,288.9 270.2,293.0 276.8,293.0 283.3,279.2 289.9,270.8 296.4,290.8 303.0,285.6 309.5,293.0 316.1,286.4 322.6,282.2 329.2,289.1 335.7,288.3 342.3,293.0 348.8,292.1 355.4,293.0 361.9,293.0 368.5,290.8 375.0,292.0 381.6,282.3 388.1,288.3 394.7,277.1 401.2,291.6 407.8,282.8 414.3,259.1 420.9,292.8 427.4,279.7 434.0,288.7" fill="none" stroke="#bc8cff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="434.0" cy="288.7" r="3.2" fill="#0d1117" stroke="#bc8cff" stroke-width="2"/>
+<line x1="451" y1="58" x2="451" y2="291" stroke="#30363d"/>
+<text class="badge" x="464" y="67" fill="#58a6ff">90D</text>
+<text class="footer" x="654" y="67" text-anchor="end" fill="#8b949e">Aug 29 - Nov 26</text>
+<text class="metric-label" x="464" y="94" fill="#8b949e">REQUESTS</text>
+<text class="metric" font-size="25.0" x="464" y="120" fill="#e6edf3">31.6K</text>
+<text class="metric-label" x="464" y="200" fill="#8b949e">TOKENS</text>
+<text class="metric" font-size="25.0" x="464" y="226" fill="#e6edf3">3.78B</text>
+<text class="chart-label" x="464" y="137" fill="#e6edf3">Requests / day</text>
+<text class="chart-peak" x="654" y="137" text-anchor="end" fill="#8b949e">peak 1.29K</text>
+<line x1="464" y1="149.0" x2="654" y2="149.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="464" y1="168.0" x2="654" y2="168.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="464" y1="187.0" x2="654" y2="187.0" stroke="#30363d" stroke-opacity="0.7"/>
+<polygon points="464.0,187.0 464.0,158.1 479.8,149.0 495.7,174.3 511.5,177.6 527.3,181.7 543.2,182.5 559.0,185.4 574.8,173.3 590.7,178.4 606.5,183.9 622.3,185.0 638.2,184.8 654.0,183.1 654.0,187.0" fill="#58a6ff" fill-opacity="0.12"/>
+<polyline points="464.0,158.1 479.8,149.0 495.7,174.3 511.5,177.6 527.3,181.7 543.2,182.5 559.0,185.4 574.8,173.3 590.7,178.4 606.5,183.9 622.3,185.0 638.2,184.8 654.0,183.1" fill="none" stroke="#58a6ff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="654.0" cy="183.1" r="3.2" fill="#0d1117" stroke="#58a6ff" stroke-width="2"/>
+<text class="chart-label" x="464" y="243" fill="#e6edf3">Tokens / day</text>
+<text class="chart-peak" x="654" y="243" text-anchor="end" fill="#8b949e">peak 162M</text>
+<line x1="464" y1="255.0" x2="654" y2="255.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="464" y1="274.0" x2="654" y2="274.0" stroke="#30363d" stroke-opacity="0.7"/>
+<line x1="464" y1="293.0" x2="654" y2="293.0" stroke="#30363d" stroke-opacity="0.7"/>
+<polygon points="464.0,293.0 464.0,265.2 479.8,255.0 495.7,281.0 511.5,283.7 527.3,288.4 543.2,288.5 559.0,292.1 574.8,281.3 590.7,285.1 606.5,290.1 622.3,291.5 638.2,291.0 654.0,288.7 654.0,293.0" fill="#bc8cff" fill-opacity="0.12"/>
+<polyline points="464.0,265.2 479.8,255.0 495.7,281.0 511.5,283.7 527.3,288.4 543.2,288.5 559.0,292.1 574.8,281.3 590.7,285.1 606.5,290.1 622.3,291.5 638.2,291.0 654.0,288.7" fill="none" stroke="#bc8cff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="654.0" cy="288.7" r="3.2" fill="#0d1117" stroke="#bc8cff" stroke-width="2"/>
+<text class="footer" x="24" y="321" fill="#8b949e">powered by Sub2API · Updated 2026-11-27 20:45 UTC+8</text>
+<text class="footer" x="654" y="321" text-anchor="end" fill="#8b949e">90D: weekly daily avg · separate scales</text>
+</svg>
